@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-keraton: #14302b;
+  --color-emerald: #1f4a42;
+  --color-kawung-gold: #c69c54;
+  --color-light-gold: #ddbe82;
+  --color-dark-gold: #8a662c;
+  --color-ivory: #f4e9d7;
+}
+
+html {
+  scroll-behavior: auto;
+  background-color: var(--color-keraton);
+  color: var(--color-ivory);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-keraton);
+  color: var(--color-ivory);
+  overflow-x: hidden;
+}
+
+/* Design Master Kawung Subtle Texture Overlay (7% - 15% opacity) */
+.bg-kawung-gold-subtle {
+  background-image: url('/assets/brand/pola-kawung-emas.png');
+  background-size: 360px auto;
+  background-repeat: repeat;
+}
+
+.bg-kawung-green-subtle {
+  background-image: url('/assets/brand/pola-kawung-hijau.png');
+  background-size: 340px auto;
+  background-repeat: repeat;
+}
+
+/* Official 4-degree diagonal cream panel with gold border accents */
+.iomu-diagonal-band {
+  transform: skewY(-4deg);
+  border-top: 3px solid var(--color-kawung-gold);
+  border-bottom: 3px solid var(--color-kawung-gold);
+}
+
+.iomu-diagonal-band-inner {
+  transform: skewY(4deg);
+}
+
+@media (max-width: 639px) {
+  .iomu-diagonal-band {
+    transform: skewY(-1.8deg);
+  }
+  .iomu-diagonal-band-inner {
+    transform: skewY(1.8deg);
+  }
+}
+
+/* Hide scrollbars for horizontal touch-scrollable navigation bars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Official Arched Frame for Landmarks & Speaker Portraits */
+.iomu-arch-frame {
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+  border: 2px solid var(--color-kawung-gold);
+}
+
+/* Mandatory 18% green photo overlay + gradient for legibility */
+.iomu-photo-overlay {
+  background:
+    linear-gradient(180deg, rgba(20, 48, 43, 0.18) 0%, rgba(20, 48, 43, 0.55) 55%, rgba(20, 48, 43, 0.94) 100%);
+}
+
+/* Custom sleek Keraton & Gold scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0e231f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8a662c;
+  border-radius: 9999px;
+  border: 2px solid #0e231f;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c69c54;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>IOMU 2027 — The 19th Indonesian Occupational Medicine Updates | Surakarta, Solo</title>
+    <meta
+      name="description"
+      content="Journey through Surakarta (Solo) in an interactive 3D experience for IOMU 2027 — The 19th Indonesian Occupational Medicine Updates, May 7–9, 2027."
+    />
+    <meta name="theme-color" content="#14302B" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              keraton: '#14302B',
+              emerald: '#1F4A42',
+              'kawung-gold': '#C69C54',
+              'light-gold': '#DDBE82',
+              'dark-gold': '#8A662C',
+              ivory: '#F4E9D7',
+            },
+            fontFamily: {
+              display: ['Montserrat', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
+              script: ['"Great Vibes"', 'cursive'],
+            },
+            boxShadow: {
+              gold: '0 8px 32px -8px rgba(198, 156, 84, 0.35)',
+              keraton: '0 20px 50px -12px rgba(20, 48, 43, 0.65)',
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      :root {
+        --color-keraton: #14302b;
+        --color-emerald: #1f4a42;
+        --color-kawung-gold: #c69c54;
+        --color-light-gold: #ddbe82;
+        --color-dark-gold: #8a662c;
+        --color-ivory: #f4e9d7;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #14302b;
+        color: #f4e9d7;
+        overflow-x: hidden;
+      }
+      .iomu-diagonal-band {
+        transform: skewY(-4deg);
+        border-top: 3px solid #c69c54;
+        border-bottom: 3px solid #c69c54;
+      }
+      .iomu-diagonal-band-inner {
+        transform: skewY(4deg);
+      }
+      @media (max-width: 639px) {
+        .iomu-diagonal-band {
+          transform: skewY(-1.8deg);
+        }
+        .iomu-diagonal-band-inner {
+          transform: skewY(1.8deg);
+        }
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .iomu-arch-frame {
+        border-top-left-radius: 9999px;
+        border-top-right-radius: 9999px;
+        border-bottom-left-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+        border: 2px solid #c69c54;
+      }
+      .iomu-photo-overlay {
+        background: linear-gradient(
+          180deg,
+          rgba(20, 48, 43, 0.18) 0%,
+          rgba(20, 48, 43, 0.55) 55%,
+          rgba(20, 48, 43, 0.94) 100%
+        );
+      }
+      .bg-kawung-gold-subtle {
+        background-image: url('./public/assets/brand/pola-kawung-emas.png');
+        background-size: 360px auto;
+        background-repeat: repeat;
+      }
+    </style>
+    <!-- Official Design Master Base64 Asset Bundle (CORS-free for file:// and HTTP) -->
+    <script src="./public/assets/brand/brand-assets.js"></script>
+    <!-- Three.js & GSAP ScrollTrigger -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script defer src="./public/app-3d-bundle.js"></script>
+  </head>
+  <body class="bg-keraton text-ivory antialiased selection:bg-kawung-gold selection:text-keraton">
+    <div id="root">
+      <div class="flex min-h-screen items-center justify-center bg-[#14302B] text-[#F4E9D7]">
+        <p class="font-semibold tracking-wider">Loading IOMU 2027 Surakarta 3D Experience...</p>
+      </div>
+    </div>
+  </body>
+</html>
