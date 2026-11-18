@@ -2,6 +2,9 @@
   command = "node scripts/build-standalone.mjs"
   publish = "dist"
 
+[build.environment]
+  NPM_FLAGS = "--legacy-peer-deps"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
