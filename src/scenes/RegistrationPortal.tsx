@@ -26,15 +26,11 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
   }, [plaqueTexture]);
 
   const crownRingRef = useRef<THREE.Mesh>(null);
-  const logoTopRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (!prefersReducedMotion && crownRingRef.current) {
       crownRingRef.current.rotation.z = t * 0.25;
-    }
-    if (!prefersReducedMotion && logoTopRef.current) {
-      logoTopRef.current.position.y = 6.65 + Math.sin(t * 1.4) * 0.14;
     }
   });
 
@@ -93,22 +89,6 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
         <planeGeometry args={[5.4, 2.0]} />
         <meshBasicMaterial map={plaqueTexture} />
       </mesh>
-
-      {/* Upper 3D Floating IOMU Solo 2027 Logo Monument (Visible Above Registration Card) */}
-      <group ref={logoTopRef} position={[0, 6.65, 0.85]}>
-        <mesh>
-          <boxGeometry args={[6.6, 2.95, 0.34]} />
-          <meshStandardMaterial color="#14302B" roughness={0.45} />
-        </mesh>
-        <mesh position={[0, 0, 0.19]}>
-          <planeGeometry args={[6.1, 2.64]} />
-          <meshBasicMaterial map={logoFinal3dTexture} transparent />
-        </mesh>
-        <mesh position={[0, 0, -0.19]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[6.1, 2.64]} />
-          <meshBasicMaterial map={logoFinal3dTexture} transparent />
-        </mesh>
-      </group>
 
       {/* Archway Center 3D Logo Panel beneath BE PART OF IOMU 2027 sign */}
       <group position={[0, 2.65, 0.72]}>

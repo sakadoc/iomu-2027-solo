@@ -1374,19 +1374,6 @@
       rgSign.userData.keepTexture = true;
       rgSign.position.set(0, 4.75, 0.65);
 
-      // Upper 3D Floating IOMU Solo 2027 Logo Monument (prominently visible above Registration card)
-      const rgLogoTopGroup = new THREE.Group();
-      rgLogoTopGroup.position.set(0, 6.65, 0.85);
-      const rgLogoTopFrame = new THREE.Mesh(new THREE.BoxGeometry(6.6, 2.95, 0.34), new THREE.MeshStandardMaterial({ color: '#14302B' }));
-      const rgLogoTopFront = new THREE.Mesh(new THREE.PlaneGeometry(6.1, 2.64), new THREE.MeshBasicMaterial({ map: logoFinal3dTex, transparent: true }));
-      rgLogoTopFront.userData.keepTexture = true;
-      rgLogoTopFront.position.set(0, 0, 0.19);
-      const rgLogoTopBack = rgLogoTopFront.clone();
-      rgLogoTopBack.userData.keepTexture = true;
-      rgLogoTopBack.position.set(0, 0, -0.19);
-      rgLogoTopBack.rotation.y = Math.PI;
-      rgLogoTopGroup.add(rgLogoTopFrame, rgLogoTopFront, rgLogoTopBack);
-
       // Archway Center 3D Logo Panel directly beneath BE PART OF IOMU 2027 sign
       const rgLogoArchGroup = new THREE.Group();
       rgLogoArchGroup.position.set(0, 2.65, 0.72);
@@ -1396,7 +1383,7 @@
       rgLogoArchFront.position.set(0, 0, 0.15);
       rgLogoArchGroup.add(rgLogoArchFrame, rgLogoArchFront);
 
-      regGate.add(rgArch, rgCrest, rgSign, rgLogoTopGroup, rgLogoArchGroup);
+      regGate.add(rgArch, rgCrest, rgSign, rgLogoArchGroup);
       applySilhouetteLineDesign(THREE, regGate, { lineColor: '#F4E9D7', accentColor: '#C69C54' });
       scene.add(regGate);
 
@@ -1503,7 +1490,6 @@
             orb.position.y = 4.6 + Math.sin(elapsed * 1.8 + idx * 1.2) * 0.16;
             orb.rotation.y = elapsed * 0.6 + idx;
           });
-          rgLogoTopGroup.position.y = 6.65 + Math.sin(elapsed * 1.4) * 0.14;
         }
 
         if (state.selectedItem && state.selectedItem.data.cameraFocusPos && state.selectedItem.data.cameraLookAt) {
@@ -1868,7 +1854,7 @@
               <button type="button" data-set-lang="en" class="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 transition ${state.lang === 'en' ? 'bg-kawung-gold text-keraton' : 'text-ivory/80 hover:text-light-gold'}">EN</button>
               <button type="button" data-set-lang="id" class="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 transition ${state.lang === 'id' ? 'bg-kawung-gold text-keraton' : 'text-ivory/80 hover:text-light-gold'}">ID</button>
             </div>
-            <button id="iomu-btn-map" type="button" class="inline-flex items-center gap-1 rounded-full border border-kawung-gold/70 bg-emerald/70 px-2.5 py-1.5 sm:px-3 text-[11px] sm:text-xs font-semibold text-ivory hover:bg-emerald"><span aria-hidden="true">🗺️</span><span class="hidden sm:inline">${t('journeyMap')}</span></button>
+            <button id="iomu-btn-map" type="button" class="inline-flex items-center rounded-full border border-kawung-gold/70 bg-emerald/70 px-2.5 py-1.5 sm:px-3 text-[11px] sm:text-xs font-semibold text-ivory hover:bg-emerald"><span>${t('journeyMap')}</span></button>
             <button id="iomu-btn-lite" type="button" class="inline-flex items-center gap-1 rounded-full border border-kawung-gold/50 bg-keraton/80 px-2.5 py-1.5 sm:px-3 text-[11px] sm:text-xs font-medium text-light-gold hover:bg-emerald"><span class="sm:hidden">${state.liteMode ? '3D' : '2D'}</span><span class="hidden sm:inline">${state.liteMode ? t('mode3d') : t('mode2d')}</span></button>
             <button id="iomu-btn-mobile-menu" type="button" aria-expanded="${state.mobileMenuOpen}" class="inline-flex lg:hidden items-center gap-1 rounded-full border border-kawung-gold/70 bg-emerald/80 px-2.5 py-1.5 text-[11px] font-bold text-ivory hover:bg-emerald">☰ <span class="hidden sm:inline">${t('menuBtn')}</span></button>
           </div>
@@ -1895,8 +1881,7 @@
           <!-- SCENE 01 — HOME (ENLARGED LOGO ONLY + TWO WELCOME MESSAGES) -->
           <section id="home" class="relative flex min-h-[140vh] flex-col justify-center px-3 sm:px-8 pb-20 sm:pb-24 pt-32 sm:pt-36">
             <div class="pointer-events-auto mx-auto w-full max-w-6xl space-y-8 sm:space-y-10">
-              <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-                <span class="inline-flex items-center gap-2 rounded-full border border-kawung-gold/70 bg-keraton/85 px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-wider text-light-gold">${t('heroTag')}</span>
+              <div class="flex justify-end gap-2 sm:gap-3">
                 <button type="button" data-scroll-target="conference" class="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 bg-keraton/85 px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold text-ivory hover:bg-emerald">${t('skipIntro')} ⏭</button>
               </div>
               <div class="iomu-diagonal-band mx-auto max-w-4xl rounded-3xl bg-ivory/95 px-4 py-6 text-keraton shadow-keraton sm:px-10 sm:py-10">

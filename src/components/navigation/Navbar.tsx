@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, Eye, Menu, Sparkles, X } from 'lucide-react';
+import { Eye, Menu, Sparkles, X } from 'lucide-react';
 import { CHAPTERS, EVENT_CONFIG } from '../../config/eventConfig';
 import { Language, UI_STRINGS } from '../../i18n/translations';
 
@@ -93,14 +93,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onToggleMap}
             aria-expanded={isMapOpen}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-sans text-[11px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold sm:px-3 sm:text-xs ${
+            className={`inline-flex items-center rounded-full border px-2.5 py-1.5 font-sans text-[11px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold sm:px-3 sm:text-xs ${
               isMapOpen
                 ? 'border-ivory bg-kawung-gold text-keraton'
                 : 'border-kawung-gold/70 bg-emerald/70 text-ivory hover:border-kawung-gold hover:bg-emerald'
             }`}
           >
-            <Compass className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{t.journeyMap}</span>
+            <span>{t.journeyMap}</span>
           </button>
 
           <button

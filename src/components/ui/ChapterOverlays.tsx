@@ -12,7 +12,6 @@ import {
   Search,
   ShieldCheck,
   SkipForward,
-  Sparkles,
   User,
 } from 'lucide-react';
 import {
@@ -128,11 +127,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         className="relative flex min-h-[140vh] flex-col justify-center px-3 pb-20 pt-32 sm:px-8 sm:pb-24 sm:pt-36"
       >
         <div className="pointer-events-auto mx-auto w-full max-w-6xl space-y-8 sm:space-y-10">
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-kawung-gold/70 bg-keraton/85 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-light-gold backdrop-blur-md sm:px-4 sm:text-xs">
-              <Sparkles className="h-3.5 w-3.5 text-kawung-gold" />
-              01 / 09 · INTERACTIVE 3D JOURNEY
-            </span>
+          <div className="flex justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => onNavigateChapter('conference')}
