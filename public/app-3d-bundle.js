@@ -2,23 +2,26 @@
 (function () {
   'use strict';
 
-  const ASSETS = window.IOMU_BRAND_ASSETS || {
-    logoDarkBg: './public/assets/brand/logo-iomu-dark.png',
-    logoLightBg: './public/assets/brand/logo-iomu-light.png',
-    logoMonoGold: './public/assets/brand/logo-iomu-mono-gold.png',
-    logoMonoWhite: './public/assets/brand/logo-iomu-mono-white.png',
-    logoEmblem: './public/assets/brand/logo-iomu-emblem.png',
-    logoPerdoki: './public/assets/brand/logo-perdoki.png',
-    logoIdi: './public/assets/brand/logo-idi.png',
-    logoHeaderCobrand: './public/assets/brand/logo-header-cobrand.jpg',
-    kawungGold: './public/assets/brand/pola-kawung-emas.png',
-    kawungGreen: './public/assets/brand/pola-kawung-hijau.png',
-    gununganGold: './public/assets/brand/gunungan-emas.png',
-    skylineCream: './public/assets/brand/skyline-solo-cream.png',
-    panggungSanggaBuwanaPhoto: './public/assets/brand/landmark-panggung-sangga-buwana.png',
-    delegates2026OverlayPhoto: './public/assets/brand/foto-peserta-2026-overlay.jpg',
-    pinGoldIcon: './public/assets/brand/icon-pin-emas.png',
+  const isFileProtocol = typeof window !== 'undefined' && window.location && window.location.protocol === 'file:';
+  const assetBase = isFileProtocol ? './public/assets/brand' : './assets/brand';
+  const DEFAULT_ASSETS = {
+    logoDarkBg: `${assetBase}/logo-iomu-dark.png`,
+    logoLightBg: `${assetBase}/logo-iomu-light.png`,
+    logoMonoGold: `${assetBase}/logo-iomu-mono-gold.png`,
+    logoMonoWhite: `${assetBase}/logo-iomu-mono-white.png`,
+    logoEmblem: `${assetBase}/logo-iomu-emblem.png`,
+    logoPerdoki: `${assetBase}/logo-perdoki.png`,
+    logoIdi: `${assetBase}/logo-idi.png`,
+    logoHeaderCobrand: `${assetBase}/logo-header-cobrand.jpg`,
+    kawungGold: `${assetBase}/pola-kawung-emas.png`,
+    kawungGreen: `${assetBase}/pola-kawung-hijau.png`,
+    gununganGold: `${assetBase}/gunungan-emas.png`,
+    skylineCream: `${assetBase}/skyline-solo-cream.png`,
+    panggungSanggaBuwanaPhoto: `${assetBase}/landmark-panggung-sangga-buwana.png`,
+    delegates2026OverlayPhoto: `${assetBase}/foto-peserta-2026-overlay.jpg`,
+    pinGoldIcon: `${assetBase}/icon-pin-emas.png`,
   };
+  const ASSETS = Object.assign({}, DEFAULT_ASSETS, window.IOMU_BRAND_ASSETS || {});
 
   function createHeritageIllustrationDataUri(title, motif) {
     const motifs = {
@@ -1825,7 +1828,7 @@
         <!-- Row 1: Official Co-Branding Pill + Utility Controls -->
         <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-3 py-2 sm:px-6">
           <a href="#home" data-scroll-target="home" aria-label="IOMU 2027 Home — Co-branded PERDOKI, IDI, and IOMU" class="inline-flex shrink-0 items-center overflow-hidden rounded-full bg-white shadow-sm transition hover:opacity-95">
-            <img src="${ASSETS.logoHeaderCobrand}" alt="PERDOKI · IDI | IOMU Solo 2027" class="h-8 sm:h-11 md:h-12 w-auto object-contain" />
+            <img src="${ASSETS.logoHeaderCobrand || `${assetBase}/logo-header-cobrand.jpg`}" alt="PERDOKI · IDI | IOMU Solo 2027" width="220" height="44" style="max-width:min(235px,46vw);display:block;" onerror="if(!this.dataset.triedFallback){this.dataset.triedFallback='1';this.src='./assets/brand/logo-header-cobrand.jpg';}else{this.onerror=null;this.src='./public/assets/brand/logo-header-cobrand.jpg';}" class="h-8 sm:h-11 md:h-12 w-auto object-contain" />
           </a>
 
           <div class="flex shrink-0 items-center gap-1 sm:gap-2">

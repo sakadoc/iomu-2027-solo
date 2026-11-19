@@ -49,7 +49,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           <img
             src={EVENT_CONFIG.assets.logoHeaderCobrand}
             alt="PERDOKI · IDI | IOMU Solo 2027"
-            className="h-8 w-auto object-contain sm:h-11 md:h-12"
+            width={220}
+            height={44}
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (!img.dataset.triedFallback) {
+                img.dataset.triedFallback = '1';
+                img.src = './assets/brand/logo-header-cobrand.jpg';
+              }
+            }}
+            className="h-8 w-auto max-w-[46vw] object-contain sm:h-11 sm:max-w-[230px] md:h-12"
           />
         </a>
 
