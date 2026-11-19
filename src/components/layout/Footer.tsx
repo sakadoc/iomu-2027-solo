@@ -1,22 +1,72 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Globe, Info, X } from 'lucide-react';
 import { EVENT_CONFIG } from '../../config/eventConfig';
 
 export const Footer: React.FC = () => {
   const [showCompliance, setShowCompliance] = useState(false);
+  const [isBannerIn, setIsBannerIn] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const banner = bannerRef.current;
+      if (!banner) return;
+      const currentY = window.scrollY || window.pageYOffset || 0;
+      const delta = currentY - lastScrollYRef.current;
+      lastScrollYRef.current = currentY;
+
+      const rect = banner.getBoundingClientRect();
+      const inTriggerZone = rect.top < window.innerHeight * 0.95 && rect.bottom > 0;
+
+      if (inTriggerZone) {
+        if (delta >= 0) {
+          setIsBannerIn(true);
+        } else if (delta < -6) {
+          setIsBannerIn(false);
+        }
+      } else {
+        setIsBannerIn(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   return (
     <footer className="relative z-20 overflow-hidden border-t border-kawung-gold/40 bg-keraton text-ivory">
       {/* Subtle Kawung Background */}
       <div className="bg-kawung-gold-subtle pointer-events-none absolute inset-0 opacity-10" />
 
-      {/* Solo Skyline Cream Silhouette */}
-      <div className="relative mx-auto max-w-7xl px-4 pt-10 sm:px-6">
-        <img
-          src={EVENT_CONFIG.assets.skylineCream}
-          alt="Stylized skyline of Surakarta featuring Pasar Gede clock tower, Pendopo Mangkunegaran, Masjid Raya Sheikh Zayed, Panggung Sangga Buwana, Gapura Gladag, and Tugu Pamandengan"
-          className="mx-auto w-full max-w-5xl object-contain opacity-90"
-        />
+      {/* Swipe In / Swipe Out Delegates Photo Banner with White Logo */}
+      <div className="relative mx-auto max-w-5xl px-4 py-8 sm:py-12">
+        <div
+          ref={bannerRef}
+          id="iomu-footer-banner"
+          className={`iomu-swipe-banner ${
+            isBannerIn ? 'is-in' : 'is-out'
+          } relative overflow-hidden rounded-3xl border-2 border-kawung-gold shadow-keraton bg-keraton/95`}
+        >
+          {/* Delegates Photo */}
+          <img
+            src={EVENT_CONFIG.assets.footerDelegatesPhoto}
+            alt="IOMU 2027 Solo Delegates & Committee"
+            className="h-64 sm:h-80 md:h-[380px] w-full object-cover object-center filter brightness-[0.88]"
+          />
+          {/* Subtle Vignette Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-keraton/85 via-transparent to-keraton/35 pointer-events-none" />
+          {/* Centered Crisp White IOMU Logo in front of image */}
+          <div className="absolute inset-0 flex items-center justify-center p-6 sm:p-10 pointer-events-none">
+            <img
+              src={EVENT_CONFIG.assets.logoFooterWhite}
+              alt="IOMU SOLO 2027"
+              className="iomu-banner-logo w-64 sm:w-80 md:w-[440px] max-w-[85%] object-contain drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)]"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Cream Footer Strip Matching Design Master Social Bar */}

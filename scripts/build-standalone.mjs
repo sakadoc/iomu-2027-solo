@@ -32,6 +32,9 @@ const assetKeys = {
   delegates2026OverlayPhoto: 'foto-peserta-2026-overlay.jpg',
   delegates2026RawPhoto: 'foto-peserta-2026.jpg',
   pinGoldIcon: 'icon-pin-emas.png',
+  footerDelegatesPhoto: 'foto-peserta-footer.jpg',
+  logoFooterWhite: 'logo-footer-white.png',
+  bannerFooterContoh: 'banner-footer-contoh.jpg',
 };
 
 const bundle = {};
@@ -97,6 +100,10 @@ function buildStaticTailwindCss() {
     'iomu-kawung-accent',
     'no-scrollbar',
     'bg-kawung-gold-subtle',
+    'iomu-swipe-banner',
+    'is-out',
+    'is-in',
+    'iomu-banner-logo',
   ]);
 
   const COLORS = {
@@ -287,6 +294,8 @@ function buildStaticTailwindCss() {
         return { decls: 'object-fit: contain;' };
       case 'object-cover':
         return { decls: 'object-fit: cover;' };
+      case 'object-center':
+        return { decls: 'object-position: center;' };
       case 'pointer-events-none':
         return { decls: 'pointer-events: none;' };
       case 'pointer-events-auto':
@@ -369,6 +378,8 @@ function buildStaticTailwindCss() {
         return { decls: 'box-shadow: 0 8px 32px -8px rgba(198, 156, 84, 0.35);' };
       case 'shadow-keraton':
         return { decls: 'box-shadow: 0 20px 50px -12px rgba(20, 48, 43, 0.65);' };
+      case 'filter':
+        return { decls: 'filter: var(--tw-filter, none);' };
       case 'backdrop-blur-sm':
         return { decls: '-webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);' };
       case 'backdrop-blur-md':
@@ -391,6 +402,11 @@ function buildStaticTailwindCss() {
         return {
           decls:
             'background-image: linear-gradient(to bottom, var(--tw-gradient-from, rgba(20, 48, 43, 0.9)), var(--tw-gradient-via, rgba(31, 74, 66, 0.45)), var(--tw-gradient-to, rgb(20, 48, 43)));',
+        };
+      case 'bg-gradient-to-t':
+        return {
+          decls:
+            'background-image: linear-gradient(to top, var(--tw-gradient-from, rgba(20, 48, 43, 0.9)), var(--tw-gradient-via, transparent), var(--tw-gradient-to, transparent));',
         };
       case 'translate-x-1/2':
         return {
@@ -559,6 +575,15 @@ function buildStaticTailwindCss() {
       if (col) return { decls: `color: ${col};` };
     }
 
+    if (u.startsWith('brightness-[')) {
+      const val = u.slice(12, -1);
+      return { decls: `filter: brightness(${val});` };
+    }
+    if (u.startsWith('drop-shadow-[')) {
+      const val = u.slice(13, -1).replace(/_/g, ' ');
+      return { decls: `filter: drop-shadow(${val});` };
+    }
+
     return null;
   }
 
@@ -622,6 +647,36 @@ button, [role="button"] { cursor: pointer; }
 button { background-color: transparent; background-image: none; }
 img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
 img { height: auto; }
+
+/* Swipe In / Swipe Out Footer Delegates Banner */
+.iomu-swipe-banner {
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1), clip-path 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+  will-change: transform, clip-path, opacity;
+}
+.iomu-swipe-banner.is-out {
+  transform: translateX(-70px);
+  opacity: 0;
+  clip-path: inset(0 100% 0 0 round 1.5rem);
+  pointer-events: none;
+}
+.iomu-swipe-banner.is-in {
+  transform: translateX(0);
+  opacity: 1;
+  clip-path: inset(0 0% 0 0 round 1.5rem);
+  pointer-events: auto;
+}
+.iomu-swipe-banner .iomu-banner-logo {
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.12s, opacity 0.6s ease 0.12s;
+  will-change: transform, opacity;
+}
+.iomu-swipe-banner.is-out .iomu-banner-logo {
+  transform: scale(0.9) translateX(-30px);
+  opacity: 0;
+}
+.iomu-swipe-banner.is-in .iomu-banner-logo {
+  transform: scale(1) translateX(0);
+  opacity: 1;
+}
 `;
 
   const bpSizes = { sm: '640px', md: '768px', lg: '1024px', xl: '1280px' };

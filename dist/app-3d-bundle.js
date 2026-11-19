@@ -22,6 +22,9 @@
     panggungSanggaBuwanaPhoto: `${assetBase}/landmark-panggung-sangga-buwana.png`,
     delegates2026OverlayPhoto: `${assetBase}/foto-peserta-2026-overlay.jpg`,
     pinGoldIcon: `${assetBase}/icon-pin-emas.png`,
+    footerDelegatesPhoto: `${assetBase}/foto-peserta-footer.jpg`,
+    logoFooterWhite: `${assetBase}/logo-footer-white.png`,
+    bannerFooterContoh: `${assetBase}/banner-footer-contoh.jpg`,
   };
   const ASSETS = Object.assign({}, DEFAULT_ASSETS, window.IOMU_BRAND_ASSETS || {});
   if (typeof document !== 'undefined' && document.documentElement && ASSETS.kawungAccent) {
@@ -2178,7 +2181,19 @@
       </main>
 
       <footer class="relative z-20 overflow-hidden border-t border-kawung-gold/40 bg-keraton text-ivory">
-        <div class="relative mx-auto max-w-7xl px-4 pt-10 sm:px-6"><img src="${ASSETS.skylineCream}" alt="Surakarta Skyline Silhouette" class="mx-auto w-full max-w-5xl object-contain opacity-90" /></div>
+        <!-- Swipe In / Swipe Out Delegates Photo Banner with White Logo, replacing the silhouette -->
+        <div class="relative mx-auto max-w-5xl px-4 py-8 sm:py-12">
+          <div id="iomu-footer-banner" class="iomu-swipe-banner is-out relative overflow-hidden rounded-3xl border-2 border-kawung-gold shadow-keraton bg-keraton/95">
+            <!-- Delegates Photo Background -->
+            <img src="${ASSETS.footerDelegatesPhoto}" alt="IOMU 2027 Solo Delegates" class="h-64 sm:h-80 md:h-[380px] w-full object-cover object-center filter brightness-[0.88]" />
+            <!-- Soft Gradient Vignette for optimal logo contrast -->
+            <div class="absolute inset-0 bg-gradient-to-t from-keraton/85 via-transparent to-keraton/35 pointer-events-none"></div>
+            <!-- Centered White IOMU 2027 Logo in front of image -->
+            <div class="absolute inset-0 flex items-center justify-center p-6 sm:p-10 pointer-events-none">
+              <img src="${ASSETS.logoFooterWhite}" alt="IOMU SOLO 2027" class="iomu-banner-logo w-64 sm:w-80 md:w-[440px] max-w-[85%] object-contain drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)]" />
+            </div>
+          </div>
+        </div>
         <div class="relative border-t-2 border-kawung-gold bg-ivory text-keraton">
           <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:px-6 lg:flex-row">
             <div class="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold">${EVENT_DATA.socials.map((s) => `<a href="${s.url}" target="_blank" rel="noreferrer" class="hover:text-dark-gold">${s.handle} ↗</a>`).join('')}</div>
@@ -2354,11 +2369,46 @@
   }
 
   let activeScrollTrigger = null;
+  let activeFooterTrigger = null;
+  let lastScrollY = typeof window !== 'undefined' ? (window.scrollY || 0) : 0;
+
+  function updateFooterSwipeOnScroll() {
+    const banner = document.getElementById('iomu-footer-banner');
+    if (!banner) return;
+    const currentY = window.scrollY || window.pageYOffset || 0;
+    const delta = currentY - lastScrollY;
+    lastScrollY = currentY;
+
+    const rect = banner.getBoundingClientRect();
+    const inTriggerZone = rect.top < window.innerHeight * 0.95 && rect.bottom > 0;
+
+    if (inTriggerZone) {
+      if (delta >= 0) {
+        // Scrolling down -> Swipe In
+        banner.classList.remove('is-out');
+        banner.classList.add('is-in');
+      } else if (delta < -6) {
+        // Scrolling back up -> Swipe Out
+        banner.classList.remove('is-in');
+        banner.classList.add('is-out');
+      }
+    } else {
+      // Scrolled past/above trigger zone -> Reset to is-out
+      banner.classList.remove('is-in');
+      banner.classList.add('is-out');
+    }
+  }
+
   function setupScrollSync() {
     const main = document.getElementById('iomu-scroll-main');
+    const footerBanner = document.getElementById('iomu-footer-banner');
     if (activeScrollTrigger) {
       activeScrollTrigger.kill();
       activeScrollTrigger = null;
+    }
+    if (activeFooterTrigger) {
+      activeFooterTrigger.kill();
+      activeFooterTrigger = null;
     }
     if (window.gsap && window.ScrollTrigger && main) {
       window.gsap.registerPlugin(window.ScrollTrigger);
@@ -2374,6 +2424,27 @@
           updateHUD();
         },
       });
+
+      if (footerBanner) {
+        activeFooterTrigger = window.ScrollTrigger.create({
+          trigger: footerBanner,
+          start: 'top 95%',
+          end: 'bottom top',
+          onUpdate: (self) => {
+            if (self.direction === 1) {
+              footerBanner.classList.remove('is-out');
+              footerBanner.classList.add('is-in');
+            } else if (self.direction === -1) {
+              footerBanner.classList.remove('is-in');
+              footerBanner.classList.add('is-out');
+            }
+          },
+          onLeaveBack: () => {
+            footerBanner.classList.remove('is-in');
+            footerBanner.classList.add('is-out');
+          },
+        });
+      }
     } else {
       window.onscroll = () => {
         const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
@@ -2381,8 +2452,12 @@
         const ch = EVENT_DATA.chapters.find((c) => state.scrollProgress >= c.progressStart && state.scrollProgress < c.progressEnd) || EVENT_DATA.chapters[EVENT_DATA.chapters.length - 1];
         state.activeChapterIndex = ch.index;
         updateHUD();
+        updateFooterSwipeOnScroll();
       };
     }
+
+    window.removeEventListener('scroll', updateFooterSwipeOnScroll);
+    window.addEventListener('scroll', updateFooterSwipeOnScroll, { passive: true });
   }
 
   window.addEventListener('keydown', (e) => {

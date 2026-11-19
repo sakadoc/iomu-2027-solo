@@ -220,6 +220,9 @@ export const EVENT_CONFIG = {
     delegates2026OverlayPhoto: '/assets/brand/foto-peserta-2026-overlay.jpg',
     delegates2026RawPhoto: '/assets/brand/foto-peserta-2026.jpg',
     pinGoldIcon: '/assets/brand/icon-pin-emas.png',
+    footerDelegatesPhoto: '/assets/brand/foto-peserta-footer.jpg',
+    logoFooterWhite: '/assets/brand/logo-footer-white.png',
+    bannerFooterContoh: '/assets/brand/banner-footer-contoh.jpg',
   },
   welcomeMessages: [
     {
