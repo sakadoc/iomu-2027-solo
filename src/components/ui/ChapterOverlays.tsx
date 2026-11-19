@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -55,6 +55,102 @@ interface ChapterOverlaysProps {
   isInspecting3D: boolean;
 }
 
+function shuffleFxBarDelays(shroud: HTMLElement) {
+  const bars = shroud.querySelectorAll<HTMLElement>('.iomu-fx-bar');
+  const indices = Array.from({ length: bars.length }, (_, idx) => idx);
+  for (let i = indices.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = indices[i];
+    indices[i] = indices[j];
+    indices[j] = tmp;
+  }
+  bars.forEach((bar, i) => {
+    bar.style.setProperty('--fx-delay', `${20 + indices[i] * 34}ms`);
+  });
+}
+
+function buildFxShroud(box: HTMLElement) {
+  if (box.querySelector(':scope > .iomu-fx-shroud')) return;
+  const fxType = box.getAttribute('data-fx') || 'wipe-left';
+  const shroud = document.createElement('div');
+  shroud.className = 'iomu-fx-shroud';
+  shroud.setAttribute('aria-hidden', 'true');
+
+  if (fxType === 'wipe-left') {
+    const panel = document.createElement('div');
+    panel.className = 'iomu-fx-curtain-left';
+    shroud.appendChild(panel);
+  } else if (fxType === 'wipe-right') {
+    const panel = document.createElement('div');
+    panel.className = 'iomu-fx-curtain-right';
+    shroud.appendChild(panel);
+  } else if (fxType === 'split-curtain') {
+    const leftDoor = document.createElement('div');
+    leftDoor.className = 'iomu-fx-door-left';
+    const rightDoor = document.createElement('div');
+    rightDoor.className = 'iomu-fx-door-right';
+    shroud.appendChild(leftDoor);
+    shroud.appendChild(rightDoor);
+  } else if (fxType === 'random-bars') {
+    const grid = document.createElement('div');
+    grid.className = 'iomu-fx-bars-grid';
+    for (let i = 0; i < 16; i += 1) {
+      const bar = document.createElement('span');
+      bar.className = 'iomu-fx-bar';
+      grid.appendChild(bar);
+    }
+    shroud.appendChild(grid);
+    shuffleFxBarDelays(shroud);
+  } else if (fxType === 'checkerboard') {
+    const grid = document.createElement('div');
+    grid.className = 'iomu-fx-checker-grid';
+    for (let r = 0; r < 4; r += 1) {
+      for (let c = 0; c < 8; c += 1) {
+        const tile = document.createElement('span');
+        const isOdd = (r + c) % 2 === 1;
+        tile.className = `iomu-fx-tile ${isOdd ? 'is-odd' : 'is-even'}`;
+        const colJitter = (c * 5 + r * 3) % 7;
+        const delayMs = (isOdd ? 210 : 0) + colJitter * 36 + r * 20;
+        tile.style.setProperty('--fx-delay', `${delayMs}ms`);
+        grid.appendChild(tile);
+      }
+    }
+    shroud.appendChild(grid);
+  } else if (fxType === 'venetian-blinds') {
+    const grid = document.createElement('div');
+    grid.className = 'iomu-fx-blinds-grid';
+    for (let r = 0; r < 10; r += 1) {
+      const slat = document.createElement('span');
+      slat.className = 'iomu-fx-blind';
+      slat.style.setProperty('--fx-delay', `${r * 45}ms`);
+      grid.appendChild(slat);
+    }
+    shroud.appendChild(grid);
+  }
+
+  box.appendChild(shroud);
+}
+
+function resetFxBox(box: HTMLElement) {
+  box.classList.add('iomu-fx-resetting');
+  box.classList.remove('is-fx-revealed');
+  const shroud = box.querySelector<HTMLElement>(':scope > .iomu-fx-shroud');
+  if (shroud && box.getAttribute('data-fx') === 'random-bars') {
+    shuffleFxBarDelays(shroud);
+  }
+  void box.offsetWidth;
+  box.classList.remove('iomu-fx-resetting');
+}
+
+function replayFxBox(box: HTMLElement) {
+  resetFxBox(box);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      box.classList.add('is-fx-revealed');
+    });
+  });
+}
+
 export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
   lang,
   onNavigateChapter,
@@ -85,6 +181,66 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
     notes: '',
   });
   const [regNotice, setRegNotice] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const boxes = Array.from(root.querySelectorAll<HTMLElement>('.iomu-fx-box'));
+    if (boxes.length === 0) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion || typeof window.IntersectionObserver !== 'function') {
+      boxes.forEach((box) => box.classList.add('iomu-fx-ready', 'is-fx-revealed'));
+      return;
+    }
+
+    boxes.forEach((box) => {
+      buildFxShroud(box);
+      box.classList.add('iomu-fx-ready');
+      box.classList.remove('is-fx-revealed');
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const box = entry.target as HTMLElement;
+          const rect = entry.boundingClientRect;
+          const inViewBand =
+            rect.top < window.innerHeight * 0.94 && rect.bottom > window.innerHeight * 0.04;
+          if (entry.isIntersecting && (entry.intersectionRatio >= 0.04 || inViewBand)) {
+            if (!box.classList.contains('is-fx-revealed')) {
+              requestAnimationFrame(() => box.classList.add('is-fx-revealed'));
+            }
+          } else if (!entry.isIntersecting && entry.intersectionRatio === 0) {
+            resetFxBox(box);
+          }
+        });
+      },
+      { threshold: [0, 0.04, 0.12] }
+    );
+
+    boxes.forEach((box) => {
+      observer.observe(box);
+      const rect = box.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.94 && rect.bottom > 0) {
+        replayFxBox(box);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleChapterNavigate = (chapterId: string) => {
+    const targetSection = document.getElementById(chapterId);
+    if (targetSection) {
+      targetSection.querySelectorAll<HTMLElement>('.iomu-fx-box').forEach((box) => {
+        replayFxBox(box);
+      });
+    }
+    onNavigateChapter(chapterId);
+  };
 
   const soloIntroLandmarks = LANDMARKS.filter((l) => l.chapterId === 'about');
   const activeDay = AGENDA_DAYS.find((d) => d.id === activeDayId) || AGENDA_DAYS[0];
@@ -115,6 +271,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
 
   return (
     <div
+      ref={rootRef}
       className={`relative z-10 pointer-events-none transition-opacity duration-300 ${
         isInspecting3D ? 'opacity-10 [&_*]:pointer-events-none' : 'opacity-100'
       }`}
@@ -135,7 +292,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
             </span>
             <button
               type="button"
-              onClick={() => onNavigateChapter('conference')}
+              onClick={() => handleChapterNavigate('conference')}
               className="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 bg-keraton/85 px-3 py-1.5 font-sans text-[11px] font-semibold text-ivory transition hover:border-light-gold hover:bg-emerald focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold sm:px-4 sm:text-xs"
             >
               <SkipForward className="h-3.5 w-3.5 text-kawung-gold" />
@@ -144,7 +301,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
           </div>
 
           {/* Design Master 4-Degree Diagonal Ivory Cream Focal Banner */}
-          <div className="iomu-diagonal-band mx-auto max-w-4xl rounded-3xl bg-ivory/95 px-4 py-6 text-keraton shadow-keraton backdrop-blur-md sm:px-10 sm:py-10">
+          <div
+            data-fx="split-curtain"
+            data-fx-dir="left"
+            className="iomu-fx-box iomu-diagonal-band mx-auto max-w-4xl rounded-3xl bg-ivory/95 px-4 py-6 text-keraton shadow-keraton backdrop-blur-md sm:px-10 sm:py-10"
+          >
             <div className="iomu-diagonal-band-inner space-y-5 text-center">
               <div className="flex flex-col items-center">
                 <span className="font-script text-3xl text-dark-gold sm:text-4xl">
@@ -189,7 +350,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
               <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => onNavigateChapter('about')}
+                  onClick={() => handleChapterNavigate('about')}
                   className="inline-flex items-center gap-2 rounded-full bg-keraton px-7 py-3 font-display text-xs font-bold tracking-wider text-ivory shadow-md transition hover:bg-emerald focus:outline-none focus-visible:ring-2 focus-visible:ring-keraton sm:text-sm"
                 >
                   {t.exploreCta}
@@ -197,7 +358,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onNavigateChapter('conference')}
+                  onClick={() => handleChapterNavigate('conference')}
                   className="inline-flex items-center gap-2 rounded-full border-2 border-kawung-gold bg-white px-6 py-3 font-display text-xs font-bold tracking-wider text-keraton transition hover:bg-ivory focus:outline-none focus-visible:ring-2 focus-visible:ring-keraton sm:text-sm"
                 >
                   {t.infoCta}
@@ -208,10 +369,12 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
 
           {/* TWO OFFICIAL WELCOME MESSAGES */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {EVENT_CONFIG.welcomeMessages.map((msg) => (
+            {EVENT_CONFIG.welcomeMessages.map((msg, msgIdx) => (
               <article
                 key={msg.id}
-                className="rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-7"
+                data-fx={msgIdx % 2 === 0 ? 'wipe-left' : 'wipe-right'}
+                data-fx-dir={msgIdx % 2 === 0 ? 'left' : 'right'}
+                className="iomu-fx-box rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-7"
               >
                 <div className="flex items-start gap-4 border-b border-kawung-gold/30 pb-4">
                   <div className="iomu-arch-frame flex h-20 w-16 shrink-0 flex-col items-center justify-center bg-emerald/75 p-2 text-center">
@@ -254,7 +417,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         className="flex min-h-[125vh] items-center px-4 py-24 sm:px-8"
       >
         <div className="mx-auto grid w-full max-w-7xl items-start gap-8 lg:grid-cols-12">
-          <div className="pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md lg:col-span-5 sm:p-8">
+          <div
+            data-fx="wipe-left"
+            data-fx-dir="left"
+            className="iomu-fx-box pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md lg:col-span-5 sm:p-8"
+          >
             <span className="font-script text-3xl text-light-gold">Heritage City</span>
             <p className="mt-1 font-display text-xs font-bold uppercase tracking-[0.18em] text-kawung-gold">
               02 / 09 · Welcome to Surakarta — The Heritage City
@@ -289,7 +456,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
           </div>
 
           {/* KNOW MORE ABOUT OUR GRAND EVENT */}
-          <div className="pointer-events-auto rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md lg:col-span-7 sm:p-8">
+          <div
+            data-fx="checkerboard"
+            data-fx-dir="right"
+            className="iomu-fx-box pointer-events-auto rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md lg:col-span-7 sm:p-8"
+          >
             <span className="font-script text-3xl text-dark-gold">Grand Event</span>
             <h2 className="mt-1 font-display text-xl font-extrabold tracking-tight text-keraton sm:text-2xl">
               KNOW MORE ABOUT OUR GRAND EVENT
@@ -322,7 +493,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="3"
         className="flex min-h-[120vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="random-bars"
+          data-fx-dir="left"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
             <div className="space-y-4 lg:col-span-7">
               <span className="font-script text-3xl text-light-gold">The Conference</span>
@@ -395,7 +570,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="4"
         className="flex min-h-[120vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="checkerboard"
+          data-fx-dir="right"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/45 pb-6 md:flex-row md:items-end">
             <div>
               <span className="font-script text-3xl text-dark-gold">{t.wsScript}</span>
@@ -509,7 +688,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="5"
         className="flex min-h-[140vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="random-bars"
+          data-fx-dir="left"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
             <div>
               <span className="font-script text-3xl text-light-gold">Distinguished Faculty</span>
@@ -649,7 +832,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="6"
         className="flex min-h-[115vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="venetian-blinds"
+          data-fx-dir="right"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="text-center">
             <span className="font-script text-3xl text-dark-gold">Three-Day Journey</span>
             <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-dark-gold">
@@ -761,7 +948,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="7"
         className="flex min-h-[135vh] items-center px-3 py-16 sm:px-8 sm:py-24"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="checkerboard"
+          data-fx-dir="left"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
             <div>
               <span className="font-script text-3xl text-light-gold">Explore Solo</span>
@@ -859,7 +1050,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="8"
         className="flex min-h-[125vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-7xl space-y-6 rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="random-bars"
+          data-fx-dir="right"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-7xl space-y-6 rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/40 pb-6 md:flex-row md:items-end">
             <div>
               <span className="font-script text-3xl text-dark-gold">{t.accScript}</span>
@@ -884,7 +1079,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
           </div>
 
           {/* Primary Featured Hotel: Alila Solo */}
-          <article className="rounded-3xl border-2 border-kawung-gold bg-keraton p-6 text-ivory shadow-gold sm:p-8">
+          <article
+            data-fx="wipe-left"
+            data-fx-dir="left"
+            className="iomu-fx-box rounded-3xl border-2 border-kawung-gold bg-keraton p-6 text-ivory shadow-gold sm:p-8"
+          >
             <div className="grid gap-6 lg:grid-cols-12 lg:items-center">
               <div className="space-y-3 lg:col-span-7">
                 <span className="inline-block rounded-full border border-kawung-gold bg-emerald px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-light-gold">
@@ -989,7 +1188,11 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="9"
         className="flex min-h-[115vh] items-center px-4 pb-32 pt-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+        <div
+          data-fx="split-curtain"
+          data-fx-dir="right"
+          className="iomu-fx-box pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10"
+        >
           <div className="text-center">
             <span className="font-script text-3xl text-dark-gold">{t.regScript}</span>
             <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-dark-gold">

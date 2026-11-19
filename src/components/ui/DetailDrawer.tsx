@@ -23,10 +23,11 @@ export const DetailDrawer: React.FC<DetailDrawerProps> = ({ selectedItem, onClos
 
   return (
     <div
+      key={`${selectedItem.kind}-${'id' in selectedItem.data ? selectedItem.data.id : 'detail'}`}
       role="dialog"
       aria-modal="true"
       aria-label="Selected 3D feature details"
-      className="fixed inset-x-3 bottom-16 top-28 z-40 flex w-auto max-w-md flex-col overflow-hidden rounded-2xl border-2 border-kawung-gold bg-ivory text-keraton shadow-keraton sm:inset-x-auto sm:bottom-20 sm:right-4 sm:top-28 sm:w-[calc(100%-2rem)] sm:rounded-3xl"
+      className="iomu-fx-drawer-enter fixed inset-x-3 bottom-16 top-28 z-40 flex w-auto max-w-md flex-col overflow-hidden rounded-2xl border-2 border-kawung-gold bg-ivory text-keraton shadow-keraton sm:inset-x-auto sm:bottom-20 sm:right-4 sm:top-28 sm:w-[calc(100%-2rem)] sm:rounded-3xl"
     >
       <div className="bg-kawung-green-subtle pointer-events-none absolute inset-0 opacity-10" />
 

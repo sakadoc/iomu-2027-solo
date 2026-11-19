@@ -1541,7 +1541,10 @@
   function navigateToChapter(id) {
     closeDetailDrawer();
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      replaySectionTransitions(id);
+    }
   }
 
   function selectItem(payload) {
@@ -1630,7 +1633,9 @@
       `;
     }
 
-    drawer.classList.remove('hidden');
+    drawer.classList.remove('hidden', 'iomu-fx-drawer-enter');
+    void drawer.offsetWidth;
+    drawer.classList.add('iomu-fx-drawer-enter');
     drawer.innerHTML = `
       <div class="relative flex items-start justify-between gap-4 border-b border-kawung-gold/40 bg-ivory/95 px-6 py-4">
         <div><span class="inline-block rounded-full bg-emerald/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-dark-gold">${badge}</span><h3 class="mt-1 font-display text-lg font-extrabold text-keraton">${title}</h3></div>
@@ -1641,6 +1646,168 @@
     `;
     document.getElementById('iomu-close-drawer').onclick = closeDetailDrawer;
     document.getElementById('iomu-return-journey').onclick = closeDetailDrawer;
+  }
+
+  let boxIntersectionObserver = null;
+
+  function shuffleBarDelays(shroud) {
+    const bars = shroud.querySelectorAll('.iomu-fx-bar');
+    const indices = Array.from({ length: bars.length }, (_, idx) => idx);
+    for (let i = indices.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = indices[i];
+      indices[i] = indices[j];
+      indices[j] = tmp;
+    }
+    bars.forEach((bar, i) => {
+      bar.style.setProperty('--fx-delay', `${20 + indices[i] * 34}ms`);
+    });
+  }
+
+  function buildBoxShroud(box) {
+    if (box.querySelector(':scope > .iomu-fx-shroud')) return;
+    const fxType = box.getAttribute('data-fx') || 'wipe-left';
+    const shroud = document.createElement('div');
+    shroud.className = 'iomu-fx-shroud';
+    shroud.setAttribute('aria-hidden', 'true');
+
+    if (fxType === 'wipe-left') {
+      const panel = document.createElement('div');
+      panel.className = 'iomu-fx-curtain-left';
+      shroud.appendChild(panel);
+    } else if (fxType === 'wipe-right') {
+      const panel = document.createElement('div');
+      panel.className = 'iomu-fx-curtain-right';
+      shroud.appendChild(panel);
+    } else if (fxType === 'split-curtain') {
+      const leftDoor = document.createElement('div');
+      leftDoor.className = 'iomu-fx-door-left';
+      const rightDoor = document.createElement('div');
+      rightDoor.className = 'iomu-fx-door-right';
+      shroud.appendChild(leftDoor);
+      shroud.appendChild(rightDoor);
+    } else if (fxType === 'random-bars') {
+      const grid = document.createElement('div');
+      grid.className = 'iomu-fx-bars-grid';
+      for (let i = 0; i < 16; i += 1) {
+        const bar = document.createElement('span');
+        bar.className = 'iomu-fx-bar';
+        grid.appendChild(bar);
+      }
+      shroud.appendChild(grid);
+      shuffleBarDelays(shroud);
+    } else if (fxType === 'checkerboard') {
+      const grid = document.createElement('div');
+      grid.className = 'iomu-fx-checker-grid';
+      const cols = 8;
+      const rows = 4;
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < cols; c += 1) {
+          const tile = document.createElement('span');
+          const isOdd = (r + c) % 2 === 1;
+          tile.className = `iomu-fx-tile ${isOdd ? 'is-odd' : 'is-even'}`;
+          const colJitter = (c * 5 + r * 3) % 7;
+          const delayMs = (isOdd ? 210 : 0) + colJitter * 36 + r * 20;
+          tile.style.setProperty('--fx-delay', `${delayMs}ms`);
+          grid.appendChild(tile);
+        }
+      }
+      shroud.appendChild(grid);
+    } else if (fxType === 'venetian-blinds') {
+      const grid = document.createElement('div');
+      grid.className = 'iomu-fx-blinds-grid';
+      for (let r = 0; r < 10; r += 1) {
+        const slat = document.createElement('span');
+        slat.className = 'iomu-fx-blind';
+        slat.style.setProperty('--fx-delay', `${r * 45}ms`);
+        grid.appendChild(slat);
+      }
+      shroud.appendChild(grid);
+    }
+
+    box.appendChild(shroud);
+  }
+
+  function resetFxBox(box) {
+    box.classList.add('iomu-fx-resetting');
+    box.classList.remove('is-fx-revealed');
+    const shroud = box.querySelector(':scope > .iomu-fx-shroud');
+    if (shroud && box.getAttribute('data-fx') === 'random-bars') {
+      shuffleBarDelays(shroud);
+    }
+    void box.offsetWidth;
+    box.classList.remove('iomu-fx-resetting');
+  }
+
+  function revealFxBox(box) {
+    if (box.classList.contains('is-fx-revealed')) return;
+    requestAnimationFrame(() => {
+      box.classList.add('is-fx-revealed');
+    });
+  }
+
+  function replayFxBox(box) {
+    resetFxBox(box);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        box.classList.add('is-fx-revealed');
+      });
+    });
+  }
+
+  function replaySectionTransitions(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.querySelectorAll('.iomu-fx-box').forEach((box) => {
+      replayFxBox(box);
+    });
+  }
+
+  function initBoxTransitions() {
+    if (boxIntersectionObserver) {
+      boxIntersectionObserver.disconnect();
+      boxIntersectionObserver = null;
+    }
+
+    const boxes = Array.from(document.querySelectorAll('.iomu-fx-box'));
+    if (boxes.length === 0) return;
+
+    if (state.prefersReducedMotion || typeof window.IntersectionObserver !== 'function') {
+      boxes.forEach((box) => {
+        box.classList.add('iomu-fx-ready', 'is-fx-revealed');
+      });
+      return;
+    }
+
+    boxes.forEach((box) => {
+      buildBoxShroud(box);
+      box.classList.add('iomu-fx-ready');
+      box.classList.remove('is-fx-revealed');
+    });
+
+    boxIntersectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const box = entry.target;
+          const rect = entry.boundingClientRect;
+          const inViewBand = rect.top < window.innerHeight * 0.94 && rect.bottom > window.innerHeight * 0.04;
+          if (entry.isIntersecting && (entry.intersectionRatio >= 0.04 || inViewBand)) {
+            revealFxBox(box);
+          } else if (!entry.isIntersecting && entry.intersectionRatio === 0) {
+            resetFxBox(box);
+          }
+        });
+      },
+      { threshold: [0, 0.04, 0.12] }
+    );
+
+    boxes.forEach((box) => {
+      boxIntersectionObserver.observe(box);
+      const rect = box.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.94 && rect.bottom > 0) {
+        replayFxBox(box);
+      }
+    });
   }
 
   function updateHUD() {
@@ -1869,7 +2036,7 @@
                 <span class="inline-flex items-center gap-2 rounded-full border border-kawung-gold/70 bg-keraton/85 px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-wider text-light-gold">${t('heroTag')}</span>
                 <button type="button" data-scroll-target="conference" class="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 bg-keraton/85 px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold text-ivory hover:bg-emerald">${t('skipIntro')} ⏭</button>
               </div>
-              <div class="iomu-diagonal-band mx-auto max-w-4xl rounded-3xl bg-ivory/95 px-4 py-6 text-keraton shadow-keraton sm:px-10 sm:py-10">
+              <div data-fx="split-curtain" data-fx-dir="left" class="iomu-fx-box iomu-diagonal-band mx-auto max-w-4xl rounded-3xl bg-ivory/95 px-4 py-6 text-keraton shadow-keraton sm:px-10 sm:py-10">
                 <div class="iomu-diagonal-band-inner space-y-5 text-center">
                   <div class="flex flex-col items-center">
                     <span class="font-script text-3xl text-dark-gold sm:text-4xl">${t('welcomeScript')}</span>
@@ -1898,8 +2065,8 @@
               <div class="grid gap-6 lg:grid-cols-2">
                 ${EVENT_DATA.welcomeMessages
                   .map(
-                    (msg) => `
-                  <article class="rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-7">
+                    (msg, idx) => `
+                  <article data-fx="${idx % 2 === 0 ? 'wipe-left' : 'wipe-right'}" data-fx-dir="${idx % 2 === 0 ? 'left' : 'right'}" class="iomu-fx-box rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-7">
                     <div class="flex items-start gap-4 border-b border-kawung-gold/30 pb-4">
                       <div class="iomu-arch-frame flex h-20 w-16 shrink-0 flex-col items-center justify-center bg-emerald/75 p-2 text-center">
                         <span class="text-[9px] font-bold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
@@ -1926,7 +2093,7 @@
           <!-- SCENE 02 — ABOUT + KNOW MORE ABOUT OUR GRAND EVENT -->
           <section id="about" class="flex min-h-[125vh] items-center px-4 py-24 sm:px-8">
             <div class="mx-auto grid w-full max-w-7xl items-start gap-8 lg:grid-cols-12">
-              <div class="pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md lg:col-span-5 sm:p-8">
+              <div data-fx="wipe-left" data-fx-dir="left" class="iomu-fx-box pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md lg:col-span-5 sm:p-8">
                 <span class="font-script text-3xl text-light-gold">${t('aboutScript')}</span>
                 <p class="mt-1 font-display text-xs font-bold uppercase tracking-[0.18em] text-kawung-gold">${t('aboutTag')}</p>
                 <h2 class="mt-2 font-display text-2xl font-extrabold text-ivory sm:text-3xl">${t('aboutHeading')}</h2>
@@ -1939,7 +2106,7 @@
                 </div>
               </div>
 
-              <div class="pointer-events-auto rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md lg:col-span-7 sm:p-8">
+              <div data-fx="checkerboard" data-fx-dir="right" class="iomu-fx-box pointer-events-auto rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md lg:col-span-7 sm:p-8">
                 <span class="font-script text-3xl text-dark-gold">${t('grandEventScript')}</span>
                 <h2 class="mt-1 font-display text-xl font-extrabold tracking-tight text-keraton sm:text-2xl">${t('grandEventHeading')}</h2>
                 <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -1960,7 +2127,7 @@
 
           <!-- SCENE 03 — CONFERENCE GLASS -->
           <section id="conference" class="flex min-h-[120vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="random-bars" data-fx-dir="left" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
               <div class="grid gap-8 lg:grid-cols-12 lg:items-center">
                 <div class="space-y-4 lg:col-span-7">
                   <span class="font-script text-3xl text-light-gold">${t('confScript')}</span>
@@ -1983,7 +2150,7 @@
 
           <!-- SCENE 04 — WORKSHOPS (HOME IVORY GLASS THEME) -->
           <section id="workshops" class="flex min-h-[120vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="checkerboard" data-fx-dir="right" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
               <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/40 pb-6 md:flex-row md:items-end">
                 <div>
                   <span class="font-script text-3xl text-dark-gold">${t('wsScript')}</span>
@@ -2004,7 +2171,7 @@
 
           <!-- SCENE 05 — SPEAKERS & EXPERTS -->
           <section id="speakers" class="flex min-h-[140vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="random-bars" data-fx-dir="left" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
               <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
                 <div>
                   <span class="font-script text-3xl text-light-gold">${t('spScript')}</span>
@@ -2035,7 +2202,7 @@
 
           <!-- SCENE 06 — AGENDA -->
           <section id="program" class="flex min-h-[115vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="venetian-blinds" data-fx-dir="right" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
               <div class="text-center"><span class="font-script text-3xl text-dark-gold">${t('agScript')}</span><p class="font-display text-xs font-bold uppercase tracking-[0.2em] text-dark-gold">${t('agTag')}</p><h2 class="mt-1 font-display text-2xl font-extrabold text-keraton sm:text-3xl">${t('agHeading')}</h2></div>
               <div class="mt-6 grid gap-3 sm:grid-cols-3">${EVENT_DATA.agendaDays.map((d) => `<button type="button" data-day-tab="${d.id}" class="rounded-2xl border-2 p-4 text-left transition"><span class="font-display text-xs font-extrabold uppercase tracking-wider text-dark-gold">${L(d.label)}</span><p class="mt-1 font-display text-sm font-bold">${L(d.fullDate)}</p></button>`).join('')}</div>
               <div id="iomu-agenda-content" class="mt-6 space-y-3"></div>
@@ -2044,7 +2211,7 @@
 
           <!-- SCENE 07 — EXPLORE SOLO -->
           <section id="explore-solo" class="flex min-h-[135vh] items-center px-3 py-16 sm:px-8 sm:py-24">
-            <div class="pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="checkerboard" data-fx-dir="left" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
               <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
                 <div>
                   <span class="font-script text-3xl text-light-gold">${t('exScript')}</span>
@@ -2081,7 +2248,7 @@
 
           <!-- SCENE 08 — ACCOMMODATION (VENUE: HOTEL ALILA SOLO) -->
           <section id="accommodation" class="flex min-h-[125vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-7xl space-y-6 rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="random-bars" data-fx-dir="right" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-7xl space-y-6 rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
               <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/40 pb-6 md:flex-row md:items-end">
                 <div>
                   <span class="font-script text-3xl text-dark-gold">${t('accScript')}</span>
@@ -2092,7 +2259,7 @@
                 <button type="button" data-select-hotel="alila-solo" class="rounded-full bg-keraton px-5 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-ivory hover:bg-emerald">${t('focusAlilaBtn')}</button>
               </div>
 
-              <article class="rounded-3xl border-2 border-kawung-gold bg-keraton p-6 text-ivory shadow-gold sm:p-8">
+              <article data-fx="wipe-left" data-fx-dir="left" class="iomu-fx-box rounded-3xl border-2 border-kawung-gold bg-keraton p-6 text-ivory shadow-gold sm:p-8">
                 <div class="grid gap-6 lg:grid-cols-12 lg:items-center">
                   <div class="space-y-3 lg:col-span-7">
                     <span class="inline-block rounded-full border border-kawung-gold bg-emerald px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-light-gold">${L(EVENT_DATA.mainHotel.tier)}</span>
@@ -2140,7 +2307,7 @@
 
           <!-- SCENE 09 — REGISTRATION -->
           <section id="registration" class="flex min-h-[115vh] items-center px-4 pb-32 pt-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
+            <div data-fx="split-curtain" data-fx-dir="right" class="iomu-fx-box pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
               <div class="text-center"><span class="font-script text-3xl text-dark-gold">${t('regScript')}</span><p class="font-display text-xs font-bold uppercase tracking-[0.2em] text-dark-gold">${t('regTag')}</p><h2 class="mt-1 font-display text-3xl font-extrabold text-keraton sm:text-4xl">${t('regHeading')}</h2><p class="mt-1 font-display text-sm font-bold tracking-[0.16em] text-emerald">${t('regSub')}</p></div>
               <div class="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-kawung-gold bg-keraton px-5 py-4 text-ivory sm:flex-row sm:items-center">
                 <div><p class="font-display text-sm font-bold text-light-gold">${t('regBannerTitle')}</p><p class="mt-0.5 text-xs text-ivory/85">${t('regBannerDesc')}</p></div>
@@ -2203,6 +2370,7 @@
     renderAgendaPanel();
     renderDetailDrawer();
     updateHUD();
+    initBoxTransitions();
   }
 
   function bindUIEvents() {
