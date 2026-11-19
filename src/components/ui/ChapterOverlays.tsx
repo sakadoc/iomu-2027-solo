@@ -71,7 +71,8 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
     'All'
   );
   const [speakerSearch, setSpeakerSearch] = useState('');
-  const [showAllConferenceSpeakers, setShowAllConferenceSpeakers] = useState(false);
+  const [speakerTrackFilter, setSpeakerTrackFilter] = useState<'all' | 'workshop' | 'conference'>('all');
+  const [showAllSpeakers, setShowAllSpeakers] = useState(false);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>('day1-tba-1');
   const [regForm, setRegForm] = useState<RegistrationDraftPayload>({
     fullName: '',
@@ -89,22 +90,32 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
   const activeDay = AGENDA_DAYS.find((d) => d.id === activeDayId) || AGENDA_DAYS[0];
 
   const normalizedSearch = speakerSearch.trim().toLowerCase();
-  const filteredWorkshopSpeakers = WORKSHOP_SPEAKERS.filter(
-    (s) =>
-      !normalizedSearch ||
-      s.positionTitle.toLowerCase().includes(normalizedSearch) ||
-      s.slotLabel.toLowerCase().includes(normalizedSearch)
-  );
-  const filteredConferenceSpeakers = CONFERENCE_SPEAKERS.filter(
-    (s) =>
-      !normalizedSearch ||
-      s.positionTitle.toLowerCase().includes(normalizedSearch) ||
-      s.slotLabel.toLowerCase().includes(normalizedSearch)
-  );
-  const visibleConferenceSpeakers =
-    showAllConferenceSpeakers || normalizedSearch
-      ? filteredConferenceSpeakers
-      : filteredConferenceSpeakers.slice(0, 12);
+  const allFilteredSpeakers = useMemo(() => {
+    let list: SpeakerProfile[] = [];
+    if (speakerTrackFilter === 'all' || speakerTrackFilter === 'workshop') {
+      list = list.concat(WORKSHOP_SPEAKERS);
+    }
+    if (speakerTrackFilter === 'all' || speakerTrackFilter === 'conference') {
+      list = list.concat(CONFERENCE_SPEAKERS);
+    }
+    return list.filter((sp) => {
+      if (!normalizedSearch) return true;
+      return (
+        sp.positionTitle.toLowerCase().includes(normalizedSearch) ||
+        sp.slotLabel.toLowerCase().includes(normalizedSearch) ||
+        sp.fullName.toLowerCase().includes(normalizedSearch) ||
+        sp.presentationTitle.toLowerCase().includes(normalizedSearch) ||
+        sp.institution.toLowerCase().includes(normalizedSearch)
+      );
+    });
+  }, [speakerTrackFilter, normalizedSearch]);
+
+  const visibleSpeakers = useMemo(() => {
+    if (normalizedSearch || showAllSpeakers || allFilteredSpeakers.length <= 16) {
+      return allFilteredSpeakers;
+    }
+    return allFilteredSpeakers.slice(0, 16);
+  }, [allFilteredSpeakers, normalizedSearch, showAllSpeakers]);
 
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,14 +138,17 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         className="relative flex min-h-[140vh] flex-col justify-center px-3 pb-20 pt-32 sm:px-8 sm:pb-24 sm:pt-36"
       >
         <div className="pointer-events-auto mx-auto w-full max-w-6xl space-y-8 sm:space-y-10">
-          <div className="flex justify-end gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-kawung-gold/70 bg-keraton/85 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-light-gold backdrop-blur-md sm:px-4 sm:text-xs">
+              {t.heroTag}
+            </span>
             <button
               type="button"
               onClick={() => onNavigateChapter('conference')}
               className="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 bg-keraton/85 px-3 py-1.5 font-sans text-[11px] font-semibold text-ivory transition hover:border-light-gold hover:bg-emerald focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold sm:px-4 sm:text-xs"
             >
               <SkipForward className="h-3.5 w-3.5 text-kawung-gold" />
-              Skip Intro
+              {t.skipIntro}
             </button>
           </div>
 
@@ -157,27 +171,14 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
                 &ldquo;{EVENT_CONFIG.theme}&rdquo;
               </p>
 
-              {/* Location & Dates Pill */}
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <div className="inline-flex items-center gap-2.5 rounded-full border-2 border-kawung-gold bg-white px-5 py-2 shadow-sm">
-                  <img
-                    src={EVENT_CONFIG.assets.pinGoldIcon}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-5 w-5 object-contain"
-                  />
-                  <div className="text-left">
-                    <p className="font-display text-xs font-extrabold text-keraton sm:text-sm">
-                      Surakarta, Indonesia
-                    </p>
-                    <p className="text-[11px] font-semibold text-dark-gold">
-                      {t.datesLabel}
-                    </p>
-                  </div>
-                </div>
-                <span className="rounded-full border border-kawung-gold bg-keraton px-4 py-2 text-xs font-bold text-light-gold">
+              {/* Combined Event Details without Ellipse Box, centered */}
+              <div className="mx-auto max-w-2xl space-y-1.5 py-1 text-center">
+                <p className="font-display text-sm font-extrabold tracking-wide text-keraton sm:text-base">
+                  Surakarta, Indonesia &middot; {t.datesLabel}
+                </p>
+                <p className="text-xs font-semibold tracking-wide text-emerald sm:text-sm">
                   {t.venueBadge}
-                </span>
+                </p>
               </div>
 
               {/* CTAs */}
@@ -505,133 +506,184 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         className="flex min-h-[140vh] items-center px-4 py-24 sm:px-8"
       >
         <div className="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
-          <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
+          <div className="flex flex-col gap-4 border-b border-kawung-gold/30 pb-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <span className="font-script text-3xl text-light-gold">Distinguished Faculty</span>
+              <span className="font-script text-3xl text-light-gold">{t.spScript}</span>
               <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-kawung-gold">
-                05 / 09 · Speaker Exhibition Colonnade
+                {t.spTag}
               </p>
               <h2 className="mt-1 font-display text-2xl font-extrabold text-ivory sm:text-3xl">
-                Speakers & Experts
+                {t.spHeading}
               </h2>
               <p className="mt-2 max-w-2xl text-xs leading-relaxed text-ivory/85 sm:text-sm">
-                Featuring two dedicated speaker lineups: <strong>15 Workshop Faculty</strong> and{' '}
-                <strong>42 Conference Speakers</strong>. Confirmed names and portraits will appear
-                upon Scientific Committee release.
+                {t.spDescPrefix} <strong>15 {t.spFilterWs}</strong> {lang === 'id' ? 'dan' : 'and'}{' '}
+                <strong>42 {t.spFilterConf}</strong>.
               </p>
             </div>
 
-            <div className="relative w-full md:w-72">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-kawung-gold" />
-              <input
-                type="search"
-                value={speakerSearch}
-                onChange={(e) => setSpeakerSearch(e.target.value)}
-                placeholder="Filter by role or topic..."
-                aria-label="Filter speakers by role or topic"
-                className="w-full rounded-full border border-kawung-gold/60 bg-emerald/60 py-2 pl-9 pr-4 text-xs text-ivory placeholder:text-ivory/60 focus:border-light-gold focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* ROW 1: WORKSHOP SPEAKERS (15 SLOTS) */}
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="font-display text-lg font-extrabold text-light-gold">
-                  1. Workshop Speakers ({filteredWorkshopSpeakers.length} of 15 Slots)
-                </h3>
-                <p className="text-xs text-ivory/80">
-                  Clinical & practical hands-on workshop instructors (Photo · Name · Position/Role)
-                </p>
-              </div>
-              <span className="rounded-full border border-kawung-gold/60 bg-emerald px-3 py-1 text-[11px] font-bold text-light-gold">
-                Workshop Track · To Be Announced
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {filteredWorkshopSpeakers.map((speaker) => (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Track Filter Tabs */}
+              <div className="inline-flex rounded-full border border-kawung-gold/50 bg-keraton/90 p-1 text-xs font-bold shadow-inner">
                 <button
-                  key={speaker.id}
                   type="button"
-                  onClick={() => onSelectSpeaker(speaker)}
-                  className="group flex flex-col items-center rounded-2xl border border-kawung-gold/50 bg-emerald/45 p-3.5 text-center backdrop-blur-sm iomu-kawung-accent transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
+                  onClick={() => setSpeakerTrackFilter('all')}
+                  className={`rounded-full px-3.5 py-1.5 transition ${
+                    speakerTrackFilter === 'all'
+                      ? 'bg-kawung-gold text-keraton shadow-sm'
+                      : 'text-ivory/80 hover:text-light-gold'
+                  }`}
                 >
-                  <div className="iomu-arch-frame flex h-28 w-24 flex-col items-center justify-center bg-keraton p-2 shadow-md ring-2 ring-ivory/90">
-                    <User className="h-6 w-6 text-light-gold" />
-                    <span className="mt-1.5 font-display text-[9px] font-bold uppercase tracking-wider text-kawung-gold">
-                      TBA
-                    </span>
-                  </div>
-                  <div className="mt-3 w-full rounded-xl border border-kawung-gold/45 bg-ivory px-2.5 py-2 text-keraton">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-dark-gold">
-                      {speaker.slotLabel}
-                    </p>
-                    <h4 className="mt-0.5 font-display text-xs font-extrabold text-keraton">
-                      {speaker.fullName}
-                    </h4>
-                    <p className="mt-0.5 line-clamp-2 text-[10px] font-medium text-emerald">
-                      {speaker.positionTitle}
-                    </p>
-                  </div>
+                  {t.spFilterAll} (57)
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setSpeakerTrackFilter('workshop')}
+                  className={`rounded-full px-3.5 py-1.5 transition ${
+                    speakerTrackFilter === 'workshop'
+                      ? 'bg-kawung-gold text-keraton shadow-sm'
+                      : 'text-ivory/80 hover:text-light-gold'
+                  }`}
+                >
+                  {t.spFilterWs} (15)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpeakerTrackFilter('conference')}
+                  className={`rounded-full px-3.5 py-1.5 transition ${
+                    speakerTrackFilter === 'conference'
+                      ? 'bg-kawung-gold text-keraton shadow-sm'
+                      : 'text-ivory/80 hover:text-light-gold'
+                  }`}
+                >
+                  {t.spFilterConf} (42)
+                </button>
+              </div>
+
+              {/* Search Box */}
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-kawung-gold" />
+                <input
+                  type="search"
+                  value={speakerSearch}
+                  onChange={(e) => setSpeakerSearch(e.target.value)}
+                  placeholder={t.spSearchPlaceholder}
+                  aria-label="Filter speakers by role or topic"
+                  className="w-full rounded-full border border-kawung-gold/60 bg-emerald/60 py-2 pl-9 pr-4 text-xs text-ivory placeholder:text-ivory/60 focus:border-light-gold focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
-          {/* ROW 2: CONFERENCE SPEAKERS (42 SLOTS / 40+ ESTIMATION) */}
-          <div className="space-y-4 border-t border-kawung-gold/30 pt-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="font-display text-lg font-extrabold text-light-gold">
-                  2. Conference Speakers ({filteredConferenceSpeakers.length} of 42 Slots)
-                </h3>
-                <p className="text-xs text-ivory/80">
-                  Keynote, plenary & international symposium faculty (Photo · Name · Position/Role)
-                </p>
+          {/* Speaker Cards Grid & Showcase Controls */}
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="font-display text-base font-extrabold text-light-gold sm:text-lg">
+                  {allFilteredSpeakers.length} {t.spHeading}
+                </span>
+                <span className="rounded-full border border-kawung-gold/50 bg-emerald/60 px-3 py-0.5 text-[10px] font-bold text-light-gold">
+                  Hotel Alila Solo
+                </span>
               </div>
-              {!normalizedSearch && (
+              {!normalizedSearch && allFilteredSpeakers.length > 16 && (
                 <button
                   type="button"
-                  onClick={() => setShowAllConferenceSpeakers((prev) => !prev)}
-                  className="rounded-full border border-kawung-gold bg-kawung-gold px-4 py-1.5 font-display text-xs font-bold text-keraton transition hover:bg-light-gold"
+                  onClick={() => setShowAllSpeakers((prev) => !prev)}
+                  className="rounded-full border border-kawung-gold bg-kawung-gold px-5 py-2 font-display text-xs font-bold text-keraton shadow-sm transition hover:bg-light-gold"
                 >
-                  {showAllConferenceSpeakers
-                    ? 'Show Compact Grid (12)'
-                    : `Show All ${filteredConferenceSpeakers.length} Conference Speakers`}
+                  {showAllSpeakers
+                    ? t.showCompact
+                    : `${t.showAllPrefix} (${allFilteredSpeakers.length})`}
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-              {visibleConferenceSpeakers.map((speaker) => (
-                <button
-                  key={speaker.id}
-                  type="button"
-                  onClick={() => onSelectSpeaker(speaker)}
-                  className="group flex flex-col items-center rounded-2xl border border-kawung-gold/45 bg-emerald/40 p-3 text-center backdrop-blur-sm iomu-kawung-accent transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
-                >
-                  <div className="iomu-arch-frame flex h-24 w-20 flex-col items-center justify-center bg-keraton p-2 shadow-sm ring-2 ring-ivory/85">
-                    <User className="h-5 w-5 text-light-gold" />
-                    <span className="mt-1 font-display text-[9px] font-bold uppercase tracking-wider text-kawung-gold">
-                      TBA
-                    </span>
-                  </div>
-                  <div className="mt-2.5 w-full rounded-xl border border-kawung-gold/40 bg-ivory px-2 py-2 text-keraton">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-dark-gold">
-                      {speaker.slotLabel}
-                    </p>
-                    <h4 className="mt-0.5 font-display text-[11px] font-extrabold text-keraton">
-                      {speaker.fullName}
-                    </h4>
-                    <p className="mt-0.5 line-clamp-2 text-[10px] font-medium text-emerald">
-                      {speaker.positionTitle}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {visibleSpeakers.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-ivory/60">
+                <p className="text-sm">
+                  {lang === 'id'
+                    ? `Tidak ada pembicara yang cocok dengan pencarian "${speakerSearch}".`
+                    : `No speakers found matching "${speakerSearch}".`}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                {visibleSpeakers.map((sp) => {
+                  const isWs = sp.track === 'workshop';
+                  return (
+                    <button
+                      key={sp.id}
+                      type="button"
+                      onClick={() => onSelectSpeaker(sp)}
+                      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-kawung-gold/45 bg-gradient-to-b from-keraton/95 via-keraton/90 to-emerald/85 p-5 text-left text-ivory shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-kawung-gold hover:shadow-[0_20px_45px_rgba(198,156,84,0.25)] iomu-kawung-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
+                    >
+                      {/* Top Bar: Track Badge + Slot Number */}
+                      <div className="flex w-full items-center justify-between gap-2 border-b border-kawung-gold/25 pb-3">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 ${
+                            isWs ? 'bg-emerald/75 text-light-gold' : 'bg-keraton/80 text-light-gold'
+                          } px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              isWs ? 'bg-kawung-gold' : 'bg-light-gold'
+                            }`}
+                          />
+                          {isWs ? t.spFilterWs : t.spFilterConf}
+                        </span>
+                        <span className="font-display text-[11px] font-extrabold tracking-wider text-light-gold/90">
+                          {sp.slotLabel}
+                        </span>
+                      </div>
+
+                      {/* Middle: Avatar & Identification */}
+                      <div className="my-4 flex w-full items-center gap-3.5">
+                        <div className="relative shrink-0">
+                          <div className="iomu-arch-frame flex h-20 w-16 flex-col items-center justify-center bg-gradient-to-b from-emerald/80 to-keraton p-1.5 shadow-md ring-2 ring-kawung-gold/60 transition-transform duration-300 group-hover:scale-105 group-hover:ring-light-gold">
+                            <span className="text-xl">🩺</span>
+                            <span className="mt-1 font-display text-[8px] font-extrabold uppercase tracking-wider text-kawung-gold">
+                              {t.photoTba}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate font-display text-sm font-extrabold leading-snug text-ivory transition-colors group-hover:text-light-gold sm:text-base">
+                            {sp.fullName}
+                          </h4>
+                          <p className="truncate text-[11px] font-semibold text-kawung-gold">
+                            {sp.titles}
+                          </p>
+                          <p className="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-ivory/80">
+                            {sp.positionTitle}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Topic Spotlight Callout */}
+                      <div className="w-full rounded-2xl border border-kawung-gold/30 bg-emerald/35 p-3 backdrop-blur-sm">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">
+                          <span>🎙️</span> <span>{t.spTopicLabel}</span>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-xs font-semibold leading-snug text-ivory/95">
+                          {sp.presentationTitle}
+                        </p>
+                      </div>
+
+                      {/* Card Footer: Institution & View Profile Action */}
+                      <div className="mt-4 flex w-full items-center justify-between border-t border-kawung-gold/20 pt-3 text-[11px]">
+                        <span className="inline-flex max-w-[65%] items-center gap-1 truncate text-[10px] font-semibold text-ivory/70">
+                          <span>🏛️</span> <span className="truncate">{sp.institution}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-display text-xs font-bold text-light-gold transition duration-200 group-hover:translate-x-1 group-hover:text-ivory">
+                          <span>{t.spViewProfile}</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </section>

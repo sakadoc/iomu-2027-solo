@@ -50,7 +50,7 @@
       journeyMap: 'Journey Map',
       mode2d: '2D Mode',
       mode3d: 'Silhouette 3D',
-      heroTag: '01 / 09 · INTERACTIVE 3D JOURNEY',
+      heroTag: '01 / 09 · HOME',
       skipIntro: 'Skip Intro',
       welcomeScript: 'Welcome to Solo',
       themeBadge: 'Event Theme · DRAFT',
@@ -97,6 +97,11 @@
       showCompact: 'Show Compact Grid (12)',
       showAllPrefix: 'Show All',
       confSpeakersSuffix: 'Conference Speakers',
+      spFilterAll: 'All Faculty & Speakers',
+      spFilterWs: 'Workshop Faculty',
+      spFilterConf: 'Conference Faculty',
+      spTopicLabel: 'SESSION TOPIC',
+      spViewProfile: 'View Profile',
       agScript: 'Three-Day Journey',
       agTag: '06 / 09 · Golden Event Timeline',
       agHeading: 'Conference Agenda',
@@ -155,7 +160,7 @@
       journeyMap: 'Peta Rute',
       mode2d: 'Mode 2D',
       mode3d: 'Siluet 3D',
-      heroTag: '01 / 09 · PERJALANAN 3D INTERAKTIF',
+      heroTag: '01 / 09 · BERANDA',
       skipIntro: 'Lewati Intro',
       welcomeScript: 'Selamat Datang',
       themeBadge: 'Tema Acara · DRAF',
@@ -202,6 +207,11 @@
       showCompact: 'Tampilkan Ringkas (12)',
       showAllPrefix: 'Tampilkan Semua',
       confSpeakersSuffix: 'Pembicara Konferensi',
+      spFilterAll: 'Semua Pembicara',
+      spFilterWs: 'Instruktur Workshop',
+      spFilterConf: 'Pembicara Konferensi',
+      spTopicLabel: 'TOPIK SESI',
+      spViewProfile: 'Lihat Profil',
       agScript: 'Perjalanan Tiga Hari',
       agTag: '06 / 09 · Linimasa Acara Emas',
       agHeading: 'Agenda Konferensi',
@@ -701,6 +711,8 @@
     activeDayId: 'day-1',
     activeProgramFilter: 'All',
     speakerSearch: '',
+    speakerTrackFilter: 'all',
+    showAllSpeakers: false,
     showAllConfSpeakers: false,
     expandedSessionId: 'day1-tba-1',
     selectedItem: null,
@@ -1697,68 +1709,122 @@
 
   function renderSpeakersLists() {
     const q = state.speakerSearch.trim().toLowerCase();
-    const wsFiltered = EVENT_DATA.workshopSpeakers.filter((s) => !q || L(s.positionTitle).toLowerCase().includes(q) || L(s.slotLabel).toLowerCase().includes(q));
-    const confFiltered = EVENT_DATA.conferenceSpeakers.filter((s) => !q || L(s.positionTitle).toLowerCase().includes(q) || L(s.slotLabel).toLowerCase().includes(q));
-    const confVisible = state.showAllConfSpeakers || q ? confFiltered : confFiltered.slice(0, 12);
+    const track = state.speakerTrackFilter || 'all';
 
-    const wsCount = document.getElementById('iomu-ws-speaker-count');
-    const confCount = document.getElementById('iomu-conf-speaker-count');
-    const wsGrid = document.getElementById('iomu-ws-speakers-grid');
-    const confGrid = document.getElementById('iomu-conf-speakers-grid');
-    const toggleBtn = document.getElementById('iomu-toggle-all-conf');
+    let allList = [];
+    if (track === 'all' || track === 'workshop') {
+      allList = allList.concat(EVENT_DATA.workshopSpeakers);
+    }
+    if (track === 'all' || track === 'conference') {
+      allList = allList.concat(EVENT_DATA.conferenceSpeakers);
+    }
 
-    if (wsCount) wsCount.textContent = `${t('wsListTitle')} (${wsFiltered.length} / 15)`;
-    if (confCount) confCount.textContent = `${t('confListTitle')} (${confFiltered.length} / 42)`;
+    const filtered = allList.filter((s) => {
+      if (!q) return true;
+      return (
+        L(s.positionTitle).toLowerCase().includes(q) ||
+        L(s.slotLabel).toLowerCase().includes(q) ||
+        L(s.fullName).toLowerCase().includes(q) ||
+        L(s.presentationTitle).toLowerCase().includes(q) ||
+        L(s.institution).toLowerCase().includes(q)
+      );
+    });
+
+    const isLimited = !q && !state.showAllSpeakers && filtered.length > 16;
+    const visible = isLimited ? filtered.slice(0, 16) : filtered;
+
+    const countEl = document.getElementById('iomu-speaker-total-count');
+    const gridEl = document.getElementById('iomu-speakers-card-grid');
+    const toggleBtn = document.getElementById('iomu-toggle-all-speakers');
+
+    if (countEl) {
+      countEl.textContent = `${filtered.length} ${t('spHeading')}`;
+    }
+
     if (toggleBtn) {
-      toggleBtn.classList.toggle('hidden', Boolean(q));
-      toggleBtn.textContent = state.showAllConfSpeakers
+      toggleBtn.classList.toggle('hidden', Boolean(q) || filtered.length <= 16);
+      toggleBtn.textContent = state.showAllSpeakers
         ? t('showCompact')
-        : `${t('showAllPrefix')} ${confFiltered.length} ${t('confSpeakersSuffix')}`;
+        : `${t('showAllPrefix')} (${filtered.length})`;
     }
 
-    if (wsGrid) {
-      wsGrid.innerHTML = wsFiltered
-        .map(
-          (sp) => `
-        <button type="button" data-select-ws-speaker="${sp.id}" class="flex flex-col items-center rounded-2xl border border-kawung-gold/50 bg-emerald/45 backdrop-blur-sm iomu-kawung-accent p-3.5 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/80">
-          <div class="iomu-arch-frame flex h-28 w-24 flex-col items-center justify-center bg-keraton p-2 shadow-md ring-2 ring-ivory/90">
-            <span class="font-display text-[9px] font-bold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
-          </div>
-          <div class="mt-3 w-full rounded-xl border border-kawung-gold/45 bg-ivory px-2.5 py-2 text-keraton">
-            <p class="text-[9px] font-bold uppercase tracking-wider text-dark-gold">${L(sp.slotLabel)}</p>
-            <h4 class="mt-0.5 font-display text-xs font-extrabold text-keraton">${L(sp.fullName)}</h4>
-            <p class="mt-0.5 line-clamp-2 text-[10px] font-medium text-emerald">${L(sp.positionTitle)}</p>
-          </div>
-        </button>`
-        )
-        .join('');
-      wsGrid.querySelectorAll('[data-select-ws-speaker]').forEach((el) => {
-        el.addEventListener('click', () => {
-          const sp = EVENT_DATA.workshopSpeakers.find((s) => s.id === el.getAttribute('data-select-ws-speaker'));
-          if (sp) selectItem({ kind: 'speaker', data: sp });
-        });
-      });
-    }
+    // Update active tab buttons styling
+    document.querySelectorAll('[data-speaker-track]').forEach((btn) => {
+      const active = btn.getAttribute('data-speaker-track') === track;
+      btn.className = `rounded-full px-3.5 py-1.5 transition ${
+        active ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'
+      }`;
+    });
 
-    if (confGrid) {
-      confGrid.innerHTML = confVisible
-        .map(
-          (sp) => `
-        <button type="button" data-select-conf-speaker="${sp.id}" class="flex flex-col items-center rounded-2xl border border-kawung-gold/45 bg-emerald/40 backdrop-blur-sm iomu-kawung-accent p-3 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/75">
-          <div class="iomu-arch-frame flex h-24 w-20 flex-col items-center justify-center bg-keraton p-2 shadow-sm ring-2 ring-ivory/85">
-            <span class="font-display text-[9px] font-bold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
+    if (gridEl) {
+      if (visible.length === 0) {
+        gridEl.innerHTML = `<div class="col-span-full py-12 text-center text-ivory/60"><p class="text-sm">Tidak ada pembicara yang cocok dengan pencarian "${q}".</p></div>`;
+        return;
+      }
+
+      gridEl.innerHTML = visible
+        .map((sp) => {
+          const isWs = sp.track === 'workshop';
+          return `
+        <button type="button" data-select-speaker="${sp.id}" class="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-kawung-gold/45 bg-gradient-to-b from-keraton/95 via-keraton/90 to-emerald/85 p-5 text-left text-ivory shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-kawung-gold hover:shadow-[0_20px_45px_rgba(198,156,84,0.25)] iomu-kawung-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold">
+          <!-- Top Bar: Track Badge + Slot Number -->
+          <div class="flex items-center justify-between gap-2 border-b border-kawung-gold/25 pb-3 w-full">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 ${isWs ? 'bg-emerald/75 text-light-gold' : 'bg-keraton/80 text-light-gold'} px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+              <span class="h-1.5 w-1.5 rounded-full ${isWs ? 'bg-kawung-gold' : 'bg-light-gold'}"></span>
+              ${isWs ? t('spFilterWs') : t('spFilterConf')}
+            </span>
+            <span class="font-display text-[11px] font-extrabold tracking-wider text-light-gold/90">${L(sp.slotLabel)}</span>
           </div>
-          <div class="mt-2.5 w-full rounded-xl border border-kawung-gold/40 bg-ivory px-2 py-2 text-keraton">
-            <p class="text-[9px] font-bold uppercase tracking-wider text-dark-gold">${L(sp.slotLabel)}</p>
-            <h4 class="mt-0.5 font-display text-[11px] font-extrabold text-keraton">${L(sp.fullName)}</h4>
-            <p class="mt-0.5 line-clamp-2 text-[10px] font-medium text-emerald">${L(sp.positionTitle)}</p>
+
+          <!-- Middle: Avatar & Identification -->
+          <div class="my-4 flex items-center gap-3.5 w-full">
+            <div class="relative shrink-0">
+              <div class="iomu-arch-frame flex h-20 w-16 flex-col items-center justify-center bg-gradient-to-b from-emerald/80 to-keraton p-1.5 shadow-md ring-2 ring-kawung-gold/60 transition-transform duration-300 group-hover:scale-105 group-hover:ring-light-gold">
+                <span class="text-xl">🩺</span>
+                <span class="mt-1 font-display text-[8px] font-extrabold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <h4 class="font-display text-sm sm:text-base font-extrabold leading-snug text-ivory transition-colors group-hover:text-light-gold truncate">
+                ${L(sp.fullName)}
+              </h4>
+              <p class="mt-0.5 text-[11px] font-semibold text-kawung-gold truncate">
+                ${L(sp.titles)}
+              </p>
+              <p class="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-ivory/80">
+                ${L(sp.positionTitle)}
+              </p>
+            </div>
           </div>
-        </button>`
-        )
+
+          <!-- Topic Spotlight Callout -->
+          <div class="w-full rounded-2xl border border-kawung-gold/30 bg-emerald/35 p-3 backdrop-blur-sm">
+            <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">
+              <span>🎙️</span> <span>${t('spTopicLabel')}</span>
+            </div>
+            <p class="mt-1 line-clamp-2 text-xs font-semibold text-ivory/95 leading-snug">
+              ${L(sp.presentationTitle)}
+            </p>
+          </div>
+
+          <!-- Card Footer: Institution & View Profile Action -->
+          <div class="mt-4 flex items-center justify-between border-t border-kawung-gold/20 pt-3 text-[11px] w-full">
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-ivory/70 truncate max-w-[65%]">
+              <span>🏛️</span> <span class="truncate">${L(sp.institution)}</span>
+            </span>
+            <span class="inline-flex items-center gap-1 font-display text-xs font-bold text-light-gold transition group-hover:text-ivory group-hover:translate-x-1 duration-200">
+              <span>${t('spViewProfile')}</span>
+              <span>&rarr;</span>
+            </span>
+          </div>
+        </button>`;
+        })
         .join('');
-      confGrid.querySelectorAll('[data-select-conf-speaker]').forEach((el) => {
+
+      gridEl.querySelectorAll('[data-select-speaker]').forEach((el) => {
         el.addEventListener('click', () => {
-          const sp = EVENT_DATA.conferenceSpeakers.find((s) => s.id === el.getAttribute('data-select-conf-speaker'));
+          const id = el.getAttribute('data-select-speaker');
+          const sp = EVENT_DATA.workshopSpeakers.find((s) => s.id === id) || EVENT_DATA.conferenceSpeakers.find((s) => s.id === id);
           if (sp) selectItem({ kind: 'speaker', data: sp });
         });
       });
@@ -1884,7 +1950,8 @@
           <!-- SCENE 01 — HOME (ENLARGED LOGO ONLY + TWO WELCOME MESSAGES) -->
           <section id="home" class="relative flex min-h-[140vh] flex-col justify-center px-3 sm:px-8 pb-20 sm:pb-24 pt-32 sm:pt-36">
             <div class="pointer-events-auto mx-auto w-full max-w-6xl space-y-8 sm:space-y-10">
-              <div class="flex justify-end gap-2 sm:gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <span class="inline-flex items-center gap-2 rounded-full border border-kawung-gold/70 bg-keraton/85 px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-wider text-light-gold backdrop-blur-md">${t('heroTag')}</span>
                 <button type="button" data-scroll-target="conference" class="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 bg-keraton/85 px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold text-ivory hover:bg-emerald">${t('skipIntro')} ⏭</button>
               </div>
               <div class="iomu-diagonal-band mx-auto max-w-4xl rounded-3xl bg-ivory/95 px-4 py-6 text-keraton shadow-keraton sm:px-10 sm:py-10">
@@ -1898,12 +1965,14 @@
                   <p class="mx-auto max-w-3xl font-display text-sm font-bold italic leading-relaxed text-emerald sm:text-base md:text-lg">
                     &ldquo;${EVENT_DATA.theme}&rdquo;
                   </p>
-                  <div class="flex flex-wrap items-center justify-center gap-3">
-                    <div class="inline-flex items-center gap-2.5 rounded-full border-2 border-kawung-gold bg-white px-5 py-2 shadow-sm">
-                      <img src="${ASSETS.pinGoldIcon}" alt="" class="h-5 w-5 object-contain" />
-                      <div class="text-left"><p class="font-display text-xs font-extrabold text-keraton sm:text-sm">Surakarta, Indonesia</p><p class="text-[11px] font-semibold text-dark-gold">${t('datesLabel')}</p></div>
-                    </div>
-                    <span class="rounded-full border border-kawung-gold bg-keraton px-4 py-2 text-xs font-bold text-light-gold">${t('venueBadge')}</span>
+                  <!-- Combined Event Details without Ellipse Box, centered -->
+                  <div class="mx-auto max-w-2xl space-y-1.5 py-1 text-center">
+                    <p class="font-display text-sm font-extrabold tracking-wide text-keraton sm:text-base">
+                      Surakarta, Indonesia &middot; ${t('datesLabel')}
+                    </p>
+                    <p class="text-xs font-semibold tracking-wide text-emerald sm:text-sm">
+                      ${t('venueBadge')}
+                    </p>
                   </div>
                   <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
                     <button type="button" data-scroll-target="about" class="rounded-full bg-keraton px-7 py-3 font-display text-xs font-bold tracking-wider text-ivory hover:bg-emerald sm:text-sm">${t('exploreCta')}</button>
@@ -2023,30 +2092,40 @@
           <!-- SCENE 05 — SPEAKERS & EXPERTS -->
           <section id="speakers" class="flex min-h-[140vh] items-center px-4 py-24 sm:px-8">
             <div class="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
-              <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
+              <div class="flex flex-col gap-4 border-b border-kawung-gold/30 pb-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <span class="font-script text-3xl text-light-gold">${t('spScript')}</span>
                   <p class="font-display text-xs font-bold uppercase tracking-[0.2em] text-kawung-gold">${t('spTag')}</p>
-                  <h2 class="mt-1 font-display text-2xl font-extrabold text-ivory sm:text-3xl">${t('spHeading')}</h2>
-                  <p class="mt-2 max-w-2xl text-xs leading-relaxed text-ivory/85 sm:text-sm">${t('spDesc')}</p>
+                  <h2 class="mt-1 font-display text-2xl sm:text-3xl font-extrabold text-ivory">${t('spHeading')}</h2>
+                  <p class="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-ivory/85">${t('spDesc')}</p>
                 </div>
-                <input id="iomu-speaker-search" type="search" value="${state.speakerSearch}" placeholder="${t('spSearchPlaceholder')}" class="w-full md:w-72 rounded-full border border-kawung-gold/60 bg-emerald/60 px-4 py-2 text-xs text-ivory placeholder:text-ivory/60 focus:outline-none" />
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <!-- Track Filter Tabs -->
+                  <div id="iomu-speaker-track-tabs" class="inline-flex rounded-full border border-kawung-gold/50 bg-keraton/90 p-1 text-xs font-bold shadow-inner">
+                    <button type="button" data-speaker-track="all" class="rounded-full px-3.5 py-1.5 transition ${state.speakerTrackFilter === 'all' ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'}">${t('spFilterAll')} (57)</button>
+                    <button type="button" data-speaker-track="workshop" class="rounded-full px-3.5 py-1.5 transition ${state.speakerTrackFilter === 'workshop' ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'}">${t('spFilterWs')} (15)</button>
+                    <button type="button" data-speaker-track="conference" class="rounded-full px-3.5 py-1.5 transition ${state.speakerTrackFilter === 'conference' ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'}">${t('spFilterConf')} (42)</button>
+                  </div>
+                  <!-- Search Box -->
+                  <div class="relative w-full sm:w-64">
+                    <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-kawung-gold">🔍</span>
+                    <input id="iomu-speaker-search" type="search" value="${state.speakerSearch}" placeholder="${t('spSearchPlaceholder')}" class="w-full rounded-full border border-kawung-gold/60 bg-emerald/60 py-2 pl-9 pr-4 text-xs text-ivory placeholder:text-ivory/60 focus:border-light-gold focus:outline-none" />
+                  </div>
+                </div>
               </div>
 
-              <div class="space-y-4">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div><h3 id="iomu-ws-speaker-count" class="font-display text-lg font-extrabold text-light-gold"></h3><p class="text-xs text-ivory/80">${t('wsListSub')}</p></div>
-                  <span class="rounded-full border border-kawung-gold/60 bg-emerald px-3 py-1 text-[11px] font-bold text-light-gold">${t('wsBadge')}</span>
+              <!-- Speaker Cards Grid & Showcase Controls -->
+              <div class="space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-2">
+                    <span id="iomu-speaker-total-count" class="font-display text-base sm:text-lg font-extrabold text-light-gold">57 ${t('spHeading')}</span>
+                    <span class="rounded-full border border-kawung-gold/50 bg-emerald/60 px-3 py-0.5 text-[10px] font-bold text-light-gold">Hotel Alila Solo</span>
+                  </div>
+                  <button id="iomu-toggle-all-speakers" type="button" class="rounded-full border border-kawung-gold bg-kawung-gold px-5 py-2 font-display text-xs font-bold text-keraton transition hover:bg-light-gold shadow-sm"></button>
                 </div>
-                <div id="iomu-ws-speakers-grid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"></div>
-              </div>
 
-              <div class="space-y-4 border-t border-kawung-gold/30 pt-6">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div><h3 id="iomu-conf-speaker-count" class="font-display text-lg font-extrabold text-light-gold"></h3><p class="text-xs text-ivory/80">${t('confListSub')}</p></div>
-                  <button id="iomu-toggle-all-conf" type="button" class="rounded-full border border-kawung-gold bg-kawung-gold px-4 py-1.5 font-display text-xs font-bold text-keraton hover:bg-light-gold"></button>
-                </div>
-                <div id="iomu-conf-speakers-grid" class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"></div>
+                <!-- Modern Card View Grid -->
+                <div id="iomu-speakers-card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6"></div>
               </div>
             </div>
           </section>
@@ -2309,10 +2388,17 @@
       });
     }
 
-    const toggleConfBtn = document.getElementById('iomu-toggle-all-conf');
-    if (toggleConfBtn) {
-      toggleConfBtn.addEventListener('click', () => {
-        state.showAllConfSpeakers = !state.showAllConfSpeakers;
+    document.querySelectorAll('[data-speaker-track]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.speakerTrackFilter = btn.getAttribute('data-speaker-track');
+        renderSpeakersLists();
+      });
+    });
+
+    const toggleAllSpeakersBtn = document.getElementById('iomu-toggle-all-speakers');
+    if (toggleAllSpeakersBtn) {
+      toggleAllSpeakersBtn.addEventListener('click', () => {
+        state.showAllSpeakers = !state.showAllSpeakers;
         renderSpeakersLists();
       });
     }

@@ -272,6 +272,8 @@ function buildStaticTailwindCss() {
         return { decls: 'align-items: center;' };
       case 'items-end':
         return { decls: 'align-items: flex-end;' };
+      case 'items-stretch':
+        return { decls: 'align-items: stretch;' };
       case 'justify-start':
         return { decls: 'justify-content: flex-start;' };
       case 'justify-center':
@@ -318,6 +320,8 @@ function buildStaticTailwindCss() {
         return { decls: 'text-align: center;' };
       case 'leading-relaxed':
         return { decls: 'line-height: 1.625;' };
+      case 'leading-snug':
+        return { decls: 'line-height: 1.375;' };
       case 'font-display':
         return { decls: "font-family: 'Montserrat', sans-serif;" };
       case 'font-sans':
@@ -378,6 +382,8 @@ function buildStaticTailwindCss() {
         return { decls: 'box-shadow: 0 8px 32px -8px rgba(198, 156, 84, 0.35);' };
       case 'shadow-keraton':
         return { decls: 'box-shadow: 0 20px 50px -12px rgba(20, 48, 43, 0.65);' };
+      case 'shadow-inner':
+        return { decls: 'box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);' };
       case 'filter':
         return { decls: 'filter: var(--tw-filter, none);' };
       case 'backdrop-blur-sm':
@@ -389,11 +395,28 @@ function buildStaticTailwindCss() {
           decls:
             'transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;',
         };
+      case 'transition-all':
+        return {
+          decls:
+            'transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;',
+        };
+      case 'transition-colors':
+        return {
+          decls:
+            'transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;',
+        };
+      case 'transition-transform':
+        return {
+          decls:
+            'transition-property: transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;',
+        };
       case 'transition-opacity':
         return {
           decls:
             'transition-property: opacity; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;',
         };
+      case 'duration-200':
+        return { decls: 'transition-duration: 200ms;' };
       case 'duration-300':
         return { decls: 'transition-duration: 300ms;' };
       case 'outline-none':
@@ -420,6 +443,16 @@ function buildStaticTailwindCss() {
         return { decls: `transform: translateY(${negPrefix}0.125rem);` };
       case 'translate-y-1':
         return { decls: `transform: translateY(${negPrefix}0.25rem);` };
+      case 'translate-y-1.5':
+        return { decls: `transform: translateY(${negPrefix}0.375rem);` };
+      case 'translate-y-2':
+        return { decls: `transform: translateY(${negPrefix}0.5rem);` };
+      case 'translate-x-1':
+        return { decls: `transform: translateX(${negPrefix}0.25rem);` };
+      case 'scale-105':
+        return { decls: 'transform: scale(1.05);' };
+      case 'group':
+        return { decls: '' };
       case 'mx-auto':
         return { decls: 'margin-left: auto; margin-right: auto;' };
       default:
@@ -490,6 +523,14 @@ function buildStaticTailwindCss() {
     if (u.startsWith('pb-')) {
       const len = resolveLength(u.slice(3));
       if (len) return { decls: `padding-bottom: ${len};` };
+    }
+    if (u.startsWith('pl-')) {
+      const len = resolveLength(u.slice(3));
+      if (len) return { decls: `padding-left: ${len};` };
+    }
+    if (u.startsWith('pr-')) {
+      const len = resolveLength(u.slice(3));
+      if (len) return { decls: `padding-right: ${len};` };
     }
     if (u.startsWith('my-')) {
       const len = resolveLength(u.slice(3));
@@ -583,6 +624,10 @@ function buildStaticTailwindCss() {
       const val = u.slice(13, -1).replace(/_/g, ' ');
       return { decls: `filter: drop-shadow(${val});` };
     }
+    if (u.startsWith('shadow-[')) {
+      const val = u.slice(8, -1).replace(/_/g, ' ');
+      return { decls: `box-shadow: ${val};` };
+    }
 
     return null;
   }
@@ -614,7 +659,8 @@ function buildStaticTailwindCss() {
 
     let sel = `.${esc(fullCls)}`;
     if (compiled.suffix) sel += compiled.suffix;
-    if (pseudo === 'hover') sel += ':hover';
+    if (pseudo === 'group-hover') sel = `.group:hover .${esc(fullCls)}`;
+    else if (pseudo === 'hover') sel += ':hover';
     else if (pseudo === 'focus') sel += ':focus';
     else if (pseudo === 'disabled') sel += ':disabled';
     else if (pseudo === 'placeholder') sel += '::placeholder';
