@@ -13,6 +13,8 @@
     logoPerdoki: `${assetBase}/logo-perdoki.png`,
     logoIdi: `${assetBase}/logo-idi.png`,
     logoHeaderCobrand: `${assetBase}/logo-header-cobrand.jpg`,
+    logoFinal3d: `${assetBase}/logo-iomu-final-3d.png`,
+    kawungAccent: `${assetBase}/pola-kawung-accent.png`,
     kawungGold: `${assetBase}/pola-kawung-emas.png`,
     kawungGreen: `${assetBase}/pola-kawung-hijau.png`,
     gununganGold: `${assetBase}/gunungan-emas.png`,
@@ -22,6 +24,9 @@
     pinGoldIcon: `${assetBase}/icon-pin-emas.png`,
   };
   const ASSETS = Object.assign({}, DEFAULT_ASSETS, window.IOMU_BRAND_ASSETS || {});
+  if (typeof document !== 'undefined' && document.documentElement && ASSETS.kawungAccent) {
+    document.documentElement.style.setProperty('--iomu-kawung-accent-url', `url("${ASSETS.kawungAccent}")`);
+  }
 
   function createHeritageIllustrationDataUri(title, motif) {
     const motifs = {
@@ -871,6 +876,8 @@
       emblemTex.encoding = THREE.sRGBEncoding;
       const skylineTex = texLoader.load(ASSETS.skylineCream);
       skylineTex.encoding = THREE.sRGBEncoding;
+      const logoFinal3dTex = texLoader.load(ASSETS.logoFinal3d);
+      logoFinal3dTex.encoding = THREE.sRGBEncoding;
 
       const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 380), new THREE.MeshBasicMaterial({ color: '#091915' }));
       ground.rotation.x = -Math.PI / 2;
@@ -1359,14 +1366,37 @@
         regGate.add(col);
       });
       const rgArch = new THREE.Mesh(new THREE.TorusGeometry(4.2, 0.26, 8, 36, Math.PI), new THREE.MeshStandardMaterial({ color: '#C69C54', emissive: '#C69C54', emissiveIntensity: 0.5, metalness: 0.9 }));
-      rgArch.position.y = 5.9;
+      rgArch.position.y = 5.2;
       const rgCrest = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.4), new THREE.MeshBasicMaterial({ map: gununganTex, transparent: true, side: THREE.DoubleSide }));
       rgCrest.userData.keepTexture = true;
-      rgCrest.position.set(0, 8.2, 0.2);
+      rgCrest.position.set(0, 9.35, 0.2);
       const rgSign = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 2.0), new THREE.MeshBasicMaterial({ map: createPlaqueTexture('BE PART OF IOMU 2027', 'HOTEL ALILA SOLO · MAY 7–9, 2027', 'dark') }));
       rgSign.userData.keepTexture = true;
-      rgSign.position.set(0, 4.5, 0.65);
-      regGate.add(rgArch, rgCrest, rgSign);
+      rgSign.position.set(0, 4.75, 0.65);
+
+      // Upper 3D Floating IOMU Solo 2027 Logo Monument (prominently visible above Registration card)
+      const rgLogoTopGroup = new THREE.Group();
+      rgLogoTopGroup.position.set(0, 6.65, 0.85);
+      const rgLogoTopFrame = new THREE.Mesh(new THREE.BoxGeometry(6.6, 2.95, 0.34), new THREE.MeshStandardMaterial({ color: '#14302B' }));
+      const rgLogoTopFront = new THREE.Mesh(new THREE.PlaneGeometry(6.1, 2.64), new THREE.MeshBasicMaterial({ map: logoFinal3dTex, transparent: true }));
+      rgLogoTopFront.userData.keepTexture = true;
+      rgLogoTopFront.position.set(0, 0, 0.19);
+      const rgLogoTopBack = rgLogoTopFront.clone();
+      rgLogoTopBack.userData.keepTexture = true;
+      rgLogoTopBack.position.set(0, 0, -0.19);
+      rgLogoTopBack.rotation.y = Math.PI;
+      rgLogoTopGroup.add(rgLogoTopFrame, rgLogoTopFront, rgLogoTopBack);
+
+      // Archway Center 3D Logo Panel directly beneath BE PART OF IOMU 2027 sign
+      const rgLogoArchGroup = new THREE.Group();
+      rgLogoArchGroup.position.set(0, 2.65, 0.72);
+      const rgLogoArchFrame = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.32, 0.26), new THREE.MeshStandardMaterial({ color: '#14302B' }));
+      const rgLogoArchFront = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 2.08), new THREE.MeshBasicMaterial({ map: logoFinal3dTex, transparent: true }));
+      rgLogoArchFront.userData.keepTexture = true;
+      rgLogoArchFront.position.set(0, 0, 0.15);
+      rgLogoArchGroup.add(rgLogoArchFrame, rgLogoArchFront);
+
+      regGate.add(rgArch, rgCrest, rgSign, rgLogoTopGroup, rgLogoArchGroup);
       applySilhouetteLineDesign(THREE, regGate, { lineColor: '#F4E9D7', accentColor: '#C69C54' });
       scene.add(regGate);
 
@@ -1473,6 +1503,7 @@
             orb.position.y = 4.6 + Math.sin(elapsed * 1.8 + idx * 1.2) * 0.16;
             orb.rotation.y = elapsed * 0.6 + idx;
           });
+          rgLogoTopGroup.position.y = 6.65 + Math.sin(elapsed * 1.4) * 0.14;
         }
 
         if (state.selectedItem && state.selectedItem.data.cameraFocusPos && state.selectedItem.data.cameraLookAt) {
@@ -1605,7 +1636,7 @@
       badge = L(data.tier);
       title = data.name;
       bodyHtml = `
-        <div class="rounded-2xl border border-kawung-gold/50 bg-keraton p-4 text-ivory"><p class="font-display text-xs font-bold uppercase tracking-wider text-light-gold">${L(data.distanceFromAlila)}</p><p class="mt-2 text-xs leading-relaxed text-ivory/90">${data.address}</p></div>
+        <div class="rounded-2xl border border-kawung-gold/50 bg-keraton/95 backdrop-blur-sm iomu-kawung-accent p-4 text-ivory"><p class="font-display text-xs font-bold uppercase tracking-wider text-light-gold">${L(data.distanceFromAlila)}</p><p class="mt-2 text-xs leading-relaxed text-ivory/90">${data.address}</p></div>
         <p class="leading-relaxed text-keraton">${L(data.summary)}</p>
         <div class="rounded-2xl border border-kawung-gold/45 bg-white/85 p-4"><p class="font-display text-xs font-bold uppercase tracking-wider text-dark-gold">${t('highlightsTitle')}</p><ul class="mt-2 space-y-1.5 text-xs text-emerald list-disc list-inside">${L(data.highlights).map((h) => `<li>${h}</li>`).join('')}</ul><p class="mt-3 border-t border-kawung-gold/30 pt-2 text-[11px] font-semibold text-dark-gold">${L(data.bookingStatus)}</p></div>
         <a href="${data.mapUrl}" target="_blank" rel="noreferrer" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-keraton px-4 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-ivory hover:bg-emerald">${t('viewGoogleMaps')} ↗</a>
@@ -1700,7 +1731,7 @@
       wsGrid.innerHTML = wsFiltered
         .map(
           (sp) => `
-        <button type="button" data-select-ws-speaker="${sp.id}" class="flex flex-col items-center rounded-2xl border border-kawung-gold/50 bg-emerald/45 p-3.5 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/80">
+        <button type="button" data-select-ws-speaker="${sp.id}" class="flex flex-col items-center rounded-2xl border border-kawung-gold/50 bg-emerald/45 backdrop-blur-sm iomu-kawung-accent p-3.5 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/80">
           <div class="iomu-arch-frame flex h-28 w-24 flex-col items-center justify-center bg-keraton p-2 shadow-md ring-2 ring-ivory/90">
             <span class="font-display text-[9px] font-bold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
           </div>
@@ -1724,7 +1755,7 @@
       confGrid.innerHTML = confVisible
         .map(
           (sp) => `
-        <button type="button" data-select-conf-speaker="${sp.id}" class="flex flex-col items-center rounded-2xl border border-kawung-gold/45 bg-emerald/40 p-3 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/75">
+        <button type="button" data-select-conf-speaker="${sp.id}" class="flex flex-col items-center rounded-2xl border border-kawung-gold/45 bg-emerald/40 backdrop-blur-sm iomu-kawung-accent p-3 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/75">
           <div class="iomu-arch-frame flex h-24 w-20 flex-col items-center justify-center bg-keraton p-2 shadow-sm ring-2 ring-ivory/85">
             <span class="font-display text-[9px] font-bold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
           </div>
@@ -1824,7 +1855,7 @@
     const soloIntroLandmarks = EVENT_DATA.landmarks.filter((l) => l.chapterId === 'about');
 
     uiRoot.innerHTML = `
-      <header class="fixed inset-x-0 top-0 z-40 border-b border-kawung-gold/30 bg-keraton/95 backdrop-blur-md">
+      <header class="fixed inset-x-0 top-0 z-40 border-b border-kawung-gold/30 bg-keraton/95 backdrop-blur-md iomu-kawung-accent">
         <!-- Row 1: Official Co-Branding Pill + Utility Controls -->
         <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-3 py-2 sm:px-6">
           <a href="#home" data-scroll-target="home" aria-label="IOMU 2027 Home — Co-branded PERDOKI, IDI, and IOMU" class="inline-flex shrink-0 items-center overflow-hidden rounded-full bg-white shadow-sm transition hover:opacity-95">
@@ -1844,7 +1875,7 @@
         </div>
 
         <!-- Row 2: Full-Width Unclipped Chapter Ribbon (Wrapped/Centered Desktop, Smooth Scroll Strip Mobile/Tablet) -->
-        <div class="border-t border-kawung-gold/25 bg-keraton/95">
+        <div class="border-t border-kawung-gold/25 bg-keraton/35">
           <nav id="iomu-chapter-ribbon" aria-label="Main navigation" class="no-scrollbar mx-auto flex max-w-[1440px] items-center justify-start gap-1 overflow-x-auto px-3 py-1.5 sm:px-6 lg:flex-wrap lg:justify-center">
             ${EVENT_DATA.chapters.map((c) => `<button type="button" data-nav-chapter="${c.index}" data-scroll-target="${c.id}" class="shrink-0 whitespace-nowrap rounded-full px-3 py-1 font-sans text-[11px] sm:text-xs font-semibold tracking-wide transition text-ivory/90 hover:bg-emerald/70">${L(c.menuLabelObj || c.menuLabel)}</button>`).join('')}
           </nav>
@@ -1898,7 +1929,7 @@
                 ${EVENT_DATA.welcomeMessages
                   .map(
                     (msg) => `
-                  <article class="rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-7">
+                  <article class="rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-7">
                     <div class="flex items-start gap-4 border-b border-kawung-gold/30 pb-4">
                       <div class="iomu-arch-frame flex h-20 w-16 shrink-0 flex-col items-center justify-center bg-emerald/75 p-2 text-center">
                         <span class="text-[9px] font-bold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
@@ -1925,7 +1956,7 @@
           <!-- SCENE 02 — ABOUT + KNOW MORE ABOUT OUR GRAND EVENT -->
           <section id="about" class="flex min-h-[125vh] items-center px-4 py-24 sm:px-8">
             <div class="mx-auto grid w-full max-w-7xl items-start gap-8 lg:grid-cols-12">
-              <div class="pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md lg:col-span-5 sm:p-8">
+              <div class="pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent lg:col-span-5 sm:p-8">
                 <span class="font-script text-3xl text-light-gold">${t('aboutScript')}</span>
                 <p class="mt-1 font-display text-xs font-bold uppercase tracking-[0.18em] text-kawung-gold">${t('aboutTag')}</p>
                 <h2 class="mt-2 font-display text-2xl font-extrabold text-ivory sm:text-3xl">${t('aboutHeading')}</h2>
@@ -1959,7 +1990,7 @@
 
           <!-- SCENE 03 — CONFERENCE GLASS -->
           <section id="conference" class="flex min-h-[120vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+            <div class="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
               <div class="grid gap-8 lg:grid-cols-12 lg:items-center">
                 <div class="space-y-4 lg:col-span-7">
                   <span class="font-script text-3xl text-light-gold">${t('confScript')}</span>
@@ -1967,7 +1998,7 @@
                   <h2 class="font-display text-2xl font-extrabold text-ivory sm:text-4xl">${t('confHeading')}</h2>
                   <p class="text-sm leading-relaxed text-ivory/90">${t('confBody')}</p>
                   <div class="grid gap-3 pt-2 sm:grid-cols-2">
-                    ${EVENT_DATA.conferencePillars.map((p) => `<div class="rounded-2xl border border-kawung-gold/40 bg-emerald/55 p-4"><span class="inline-block rounded-full bg-keraton/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">${L(p.badge)}</span><h3 class="mt-1.5 font-display text-sm font-bold text-ivory">${L(p.title)}</h3><p class="mt-1 text-xs leading-relaxed text-ivory/85">${L(p.description)}</p></div>`).join('')}
+                    ${EVENT_DATA.conferencePillars.map((p) => `<div class="rounded-2xl border border-kawung-gold/40 bg-emerald/55 backdrop-blur-sm iomu-kawung-accent p-4"><span class="inline-block rounded-full bg-keraton/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">${L(p.badge)}</span><h3 class="mt-1.5 font-display text-sm font-bold text-ivory">${L(p.title)}</h3><p class="mt-1 text-xs leading-relaxed text-ivory/85">${L(p.description)}</p></div>`).join('')}
                   </div>
                 </div>
                 <div class="lg:col-span-5">
@@ -2003,7 +2034,7 @@
 
           <!-- SCENE 05 — SPEAKERS & EXPERTS -->
           <section id="speakers" class="flex min-h-[140vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+            <div class="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
               <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
                 <div>
                   <span class="font-script text-3xl text-light-gold">${t('spScript')}</span>
@@ -2043,7 +2074,7 @@
 
           <!-- SCENE 07 — EXPLORE SOLO -->
           <section id="explore-solo" class="flex min-h-[135vh] items-center px-3 py-16 sm:px-8 sm:py-24">
-            <div class="pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+            <div class="pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
               <div class="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
                 <div>
                   <span class="font-script text-3xl text-light-gold">${t('exScript')}</span>
@@ -2057,7 +2088,7 @@
                 ${EVENT_DATA.soloDestinations
                   .map(
                     (dest) => `
-                  <article class="flex flex-col overflow-hidden rounded-3xl border border-kawung-gold/55 bg-emerald/45 text-ivory transition hover:-translate-y-1 hover:border-kawung-gold">
+                  <article class="flex flex-col overflow-hidden rounded-3xl border border-kawung-gold/55 bg-emerald/45 text-ivory backdrop-blur-sm iomu-kawung-accent transition hover:-translate-y-1 hover:border-kawung-gold">
                     <div class="p-4 pb-0"><div class="iomu-arch-frame overflow-hidden bg-keraton"><img src="${dest.image}" alt="${dest.name}" loading="lazy" data-fallback="${dest.fallbackImage || ''}" onerror="if(this.dataset.fallback && this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" class="h-44 sm:h-48 w-full object-cover" /></div></div>
                     <div class="flex flex-1 flex-col p-4">
                       <span class="text-[10px] font-bold uppercase tracking-wider text-kawung-gold">${L(dest.category)}</span>
@@ -2091,7 +2122,7 @@
                 <button type="button" data-select-hotel="alila-solo" class="rounded-full bg-keraton px-5 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-ivory hover:bg-emerald">${t('focusAlilaBtn')}</button>
               </div>
 
-              <article class="rounded-3xl border-2 border-kawung-gold bg-keraton p-6 text-ivory shadow-gold sm:p-8">
+              <article class="rounded-3xl border-2 border-kawung-gold bg-keraton/95 p-6 text-ivory shadow-gold backdrop-blur-md iomu-kawung-accent sm:p-8">
                 <div class="grid gap-6 lg:grid-cols-12 lg:items-center">
                   <div class="space-y-3 lg:col-span-7">
                     <span class="inline-block rounded-full border border-kawung-gold bg-emerald px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-light-gold">${L(EVENT_DATA.mainHotel.tier)}</span>
@@ -2103,7 +2134,7 @@
                       <a href="${EVENT_DATA.mainHotel.mapUrl}" target="_blank" rel="noreferrer" class="rounded-full border border-kawung-gold/70 px-5 py-2 text-xs font-semibold text-ivory hover:bg-emerald">${t('viewGoogleMaps')} ↗</a>
                     </div>
                   </div>
-                  <div class="rounded-2xl border border-kawung-gold/45 bg-emerald/60 p-5 lg:col-span-5">
+                  <div class="rounded-2xl border border-kawung-gold/45 bg-emerald/60 backdrop-blur-sm iomu-kawung-accent p-5 lg:col-span-5">
                     <p class="font-display text-xs font-bold uppercase tracking-wider text-light-gold">${t('highlightsTitle')}</p>
                     <ul class="mt-3 space-y-2 text-xs text-ivory/90 list-disc list-inside">${L(EVENT_DATA.mainHotel.highlights).map((h) => `<li>${h}</li>`).join('')}</ul>
                     <p class="mt-4 border-t border-kawung-gold/30 pt-3 text-[11px] font-semibold text-kawung-gold">${L(EVENT_DATA.mainHotel.bookingStatus)}</p>
@@ -2141,7 +2172,7 @@
           <section id="registration" class="flex min-h-[115vh] items-center px-4 pb-32 pt-24 sm:px-8">
             <div class="pointer-events-auto mx-auto w-full max-w-5xl rounded-3xl border-2 border-kawung-gold bg-ivory/95 p-6 text-keraton shadow-keraton backdrop-blur-md sm:p-10">
               <div class="text-center"><span class="font-script text-3xl text-dark-gold">${t('regScript')}</span><p class="font-display text-xs font-bold uppercase tracking-[0.2em] text-dark-gold">${t('regTag')}</p><h2 class="mt-1 font-display text-3xl font-extrabold text-keraton sm:text-4xl">${t('regHeading')}</h2><p class="mt-1 font-display text-sm font-bold tracking-[0.16em] text-emerald">${t('regSub')}</p></div>
-              <div class="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-kawung-gold bg-keraton px-5 py-4 text-ivory sm:flex-row sm:items-center">
+              <div class="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-kawung-gold bg-keraton/95 px-5 py-4 text-ivory backdrop-blur-sm iomu-kawung-accent sm:flex-row sm:items-center">
                 <div><p class="font-display text-sm font-bold text-light-gold">${t('regBannerTitle')}</p><p class="mt-0.5 text-xs text-ivory/85">${t('regBannerDesc')}</p></div>
                 <span class="shrink-0 rounded-full border border-kawung-gold bg-emerald px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-light-gold">${t('regPreviewBadge')}</span>
               </div>
@@ -2184,7 +2215,7 @@
         </div>
       </div>
 
-      <aside class="fixed bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 z-30 mx-auto flex max-w-4xl items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-kawung-gold/40 bg-keraton/90 px-3 py-2 sm:px-4 sm:py-2.5 shadow-keraton backdrop-blur-md">
+      <aside class="fixed bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 z-30 mx-auto flex max-w-4xl items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-kawung-gold/40 bg-keraton/90 px-3 py-2 sm:px-4 sm:py-2.5 shadow-keraton backdrop-blur-md iomu-kawung-accent">
         <div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <img src="${ASSETS.pinGoldIcon}" alt="" class="h-5 w-5 sm:h-6 sm:w-6 shrink-0 object-contain" />
           <div class="min-w-0"><p id="iomu-hud-title" class="truncate font-display text-[11px] font-bold tracking-wider text-light-gold sm:text-sm"></p><div class="mt-1 flex items-center gap-2"><div class="h-1.5 w-24 overflow-hidden rounded-full bg-emerald sm:w-44"><div id="iomu-hud-bar" class="h-full rounded-full bg-kawung-gold" style="width:4%"></div></div><span id="iomu-hud-pct" class="text-[10px] sm:text-[11px] font-medium text-ivory/75">0%</span></div></div>

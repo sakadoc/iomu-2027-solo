@@ -37,6 +37,7 @@ img { height: auto; }
 .bg-ivory\/95 { background-color: rgba(244, 233, 215, 0.95); }
 .bg-kawung-gold { background-color: rgb(198, 156, 84); }
 .bg-keraton { background-color: rgb(20, 48, 43); }
+.bg-keraton\/35 { background-color: rgba(20, 48, 43, 0.35); }
 .bg-keraton\/80 { background-color: rgba(20, 48, 43, 0.8); }
 .bg-keraton\/85 { background-color: rgba(20, 48, 43, 0.85); }
 .bg-keraton\/90 { background-color: rgba(20, 48, 43, 0.9); }

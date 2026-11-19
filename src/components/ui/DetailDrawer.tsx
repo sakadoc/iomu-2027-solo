@@ -201,7 +201,7 @@ export const DetailDrawer: React.FC<DetailDrawerProps> = ({ selectedItem, onClos
 
         {selectedItem.kind === 'hotel' && (
           <>
-            <div className="rounded-2xl border border-kawung-gold/50 bg-keraton p-4 text-ivory">
+            <div className="rounded-2xl border border-kawung-gold/50 bg-keraton/95 p-4 text-ivory backdrop-blur-sm iomu-kawung-accent">
               <div className="flex items-center gap-2 text-light-gold">
                 <Building2 className="h-4 w-4 text-kawung-gold" />
                 <span className="font-display text-xs font-bold uppercase tracking-wider">

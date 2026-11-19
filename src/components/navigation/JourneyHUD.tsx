@@ -25,7 +25,7 @@ export const JourneyHUD: React.FC<JourneyHUDProps> = ({
       {/* Persistent Bottom Progress HUD */}
       <aside
         aria-label="Journey progress indicator"
-        className="fixed bottom-2.5 left-2.5 right-2.5 z-30 mx-auto flex max-w-4xl items-center justify-between gap-2 rounded-2xl border border-kawung-gold/40 bg-keraton/90 px-3 py-2 shadow-keraton backdrop-blur-md sm:bottom-4 sm:left-4 sm:right-4 sm:gap-3 sm:px-4 sm:py-2.5"
+        className="fixed bottom-2.5 left-2.5 right-2.5 z-30 mx-auto flex max-w-4xl items-center justify-between gap-2 rounded-2xl border border-kawung-gold/40 bg-keraton/90 px-3 py-2 shadow-keraton backdrop-blur-md iomu-kawung-accent sm:bottom-4 sm:left-4 sm:right-4 sm:gap-3 sm:px-4 sm:py-2.5"
       >
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <img

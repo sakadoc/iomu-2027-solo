@@ -13,6 +13,7 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
   prefersReducedMotion,
 }) => {
   const gununganTexture = useTexture(EVENT_CONFIG.assets.gununganGold);
+  const logoFinal3dTexture = useTexture(EVENT_CONFIG.assets.logoFinal3d);
   const plaqueTexture = useMemo(
     () => createPlaqueTexture('BE PART OF IOMU 2027', 'HOTEL ALILA SOLO · MAY 7–9, 2027', 'dark'),
     []
@@ -25,10 +26,15 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
   }, [plaqueTexture]);
 
   const crownRingRef = useRef<THREE.Mesh>(null);
+  const logoTopRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
     if (!prefersReducedMotion && crownRingRef.current) {
-      crownRingRef.current.rotation.z = clock.getElapsedTime() * 0.25;
+      crownRingRef.current.rotation.z = t * 0.25;
+    }
+    if (!prefersReducedMotion && logoTopRef.current) {
+      logoTopRef.current.position.y = 6.65 + Math.sin(t * 1.4) * 0.14;
     }
   });
 
@@ -59,7 +65,7 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
       ))}
 
       {/* Golden Arch Crown */}
-      <mesh position={[0, 5.9, 0]}>
+      <mesh position={[0, 5.2, 0]}>
         <torusGeometry args={[4.2, 0.26, 14, 48, Math.PI]} />
         <meshStandardMaterial
           color="#C69C54"
@@ -71,7 +77,7 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
       </mesh>
 
       {/* Gunungan Crest at Apex */}
-      <mesh position={[0, 8.2, 0.2]}>
+      <mesh position={[0, 9.35, 0.2]}>
         <planeGeometry args={[2.2, 3.4]} />
         <meshBasicMaterial map={gununganTexture} transparent side={THREE.DoubleSide} />
       </mesh>
@@ -83,10 +89,38 @@ export const RegistrationPortal: React.FC<RegistrationPortalProps> = ({
       </mesh>
 
       {/* Illuminated Gateway Sign */}
-      <mesh position={[0, 4.5, 0.65]}>
+      <mesh position={[0, 4.75, 0.65]}>
         <planeGeometry args={[5.4, 2.0]} />
         <meshBasicMaterial map={plaqueTexture} />
       </mesh>
+
+      {/* Upper 3D Floating IOMU Solo 2027 Logo Monument (Visible Above Registration Card) */}
+      <group ref={logoTopRef} position={[0, 6.65, 0.85]}>
+        <mesh>
+          <boxGeometry args={[6.6, 2.95, 0.34]} />
+          <meshStandardMaterial color="#14302B" roughness={0.45} />
+        </mesh>
+        <mesh position={[0, 0, 0.19]}>
+          <planeGeometry args={[6.1, 2.64]} />
+          <meshBasicMaterial map={logoFinal3dTexture} transparent />
+        </mesh>
+        <mesh position={[0, 0, -0.19]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[6.1, 2.64]} />
+          <meshBasicMaterial map={logoFinal3dTexture} transparent />
+        </mesh>
+      </group>
+
+      {/* Archway Center 3D Logo Panel beneath BE PART OF IOMU 2027 sign */}
+      <group position={[0, 2.65, 0.72]}>
+        <mesh>
+          <boxGeometry args={[5.2, 2.32, 0.26]} />
+          <meshStandardMaterial color="#14302B" roughness={0.45} />
+        </mesh>
+        <mesh position={[0, 0, 0.15]}>
+          <planeGeometry args={[4.8, 2.08]} />
+          <meshBasicMaterial map={logoFinal3dTexture} transparent />
+        </mesh>
+      </group>
     </group>
   );
 };

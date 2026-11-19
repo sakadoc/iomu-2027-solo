@@ -9,6 +9,7 @@
   --color-light-gold: #ddbe82;
   --color-dark-gold: #8a662c;
   --color-ivory: #f4e9d7;
+  --iomu-kawung-accent-url: url('/assets/brand/pola-kawung-accent.png');
 }
 
 html {
@@ -79,6 +80,28 @@ body {
 .iomu-photo-overlay {
   background:
     linear-gradient(180deg, rgba(20, 48, 43, 0.18) 0%, rgba(20, 48, 43, 0.55) 55%, rgba(20, 48, 43, 0.94) 100%);
+}
+
+/* Kawung Gold Accent Overlay for Header & Green Boxes (Preserves Glassmorphism) */
+.iomu-kawung-accent:not(.fixed):not(.absolute) {
+  position: relative;
+}
+.iomu-kawung-accent::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background-image: var(--iomu-kawung-accent-url);
+  background-size: 300px auto;
+  background-repeat: repeat;
+  background-position: center;
+  opacity: 0.16;
+}
+.iomu-kawung-accent > *:not(.fixed):not(.absolute) {
+  position: relative;
+  z-index: 1;
 }
 
 /* Custom sleek Keraton & Gold scrollbar */

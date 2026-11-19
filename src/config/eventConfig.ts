@@ -210,6 +210,8 @@ export const EVENT_CONFIG = {
     logoPerdoki: '/assets/brand/logo-perdoki.png',
     logoIdi: '/assets/brand/logo-idi.png',
     logoHeaderCobrand: '/assets/brand/logo-header-cobrand.jpg',
+    logoFinal3d: '/assets/brand/logo-iomu-final-3d.png',
+    kawungAccent: '/assets/brand/pola-kawung-accent.png',
     kawungGold: '/assets/brand/pola-kawung-emas.png',
     kawungGreen: '/assets/brand/pola-kawung-hijau.png',
     gununganGold: '/assets/brand/gunungan-emas.png',

@@ -22,6 +22,8 @@ const assetKeys = {
   logoPerdoki: 'logo-perdoki.png',
   logoIdi: 'logo-idi.png',
   logoHeaderCobrand: 'logo-header-cobrand.jpg',
+  logoFinal3d: 'logo-iomu-final-3d.png',
+  kawungAccent: 'pola-kawung-accent.png',
   kawungGold: 'pola-kawung-emas.png',
   kawungGreen: 'pola-kawung-hijau.png',
   gununganGold: 'gunungan-emas.png',
@@ -92,6 +94,7 @@ function buildStaticTailwindCss() {
     'iomu-diagonal-band',
     'iomu-diagonal-band-inner',
     'iomu-photo-overlay',
+    'iomu-kawung-accent',
     'no-scrollbar',
     'bg-kawung-gold-subtle',
   ]);
@@ -651,6 +654,7 @@ if (fs.existsSync(rootLauncher)) {
     .replaceAll('./public/tailwind-standalone.css', './tailwind-standalone.css')
     .replaceAll('./public/assets/brand/brand-assets.js', './assets/brand/brand-assets.js')
     .replaceAll('./public/assets/brand/pola-kawung-emas.png', './assets/brand/pola-kawung-emas.png')
+    .replaceAll('./public/assets/brand/pola-kawung-accent.png', './assets/brand/pola-kawung-accent.png')
     .replaceAll('./public/app-3d-bundle.js', './app-3d-bundle.js');
   fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf8');
 }

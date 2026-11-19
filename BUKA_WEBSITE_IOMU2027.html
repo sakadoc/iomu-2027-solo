@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <!-- Pre-compiled Static Stylesheet (Zero CDN dependency for Edge & Chrome) -->
-    <link rel="stylesheet" href="./public/tailwind-standalone.css?v=2027.4" />
+    <link rel="stylesheet" href="./public/tailwind-standalone.css?v=2027.5" />
     <style>
       :root {
         --color-keraton: #14302b;
@@ -25,6 +25,7 @@
         --color-light-gold: #ddbe82;
         --color-dark-gold: #8a662c;
         --color-ivory: #f4e9d7;
+        --iomu-kawung-accent-url: url('./public/assets/brand/pola-kawung-accent.png');
       }
       body {
         font-family: 'Inter', sans-serif;
@@ -75,14 +76,34 @@
         background-size: 360px auto;
         background-repeat: repeat;
       }
+      .iomu-kawung-accent:not(.fixed):not(.absolute) {
+        position: relative;
+      }
+      .iomu-kawung-accent::before {
+        content: "";
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        border-radius: inherit;
+        background-image: var(--iomu-kawung-accent-url);
+        background-size: 300px auto;
+        background-repeat: repeat;
+        background-position: center;
+        opacity: 0.16;
+      }
+      .iomu-kawung-accent > *:not(.fixed):not(.absolute) {
+        position: relative;
+        z-index: 1;
+      }
     </style>
     <!-- Official Design Master Base64 Asset Bundle (CORS-free for file:// and HTTP) -->
-    <script src="./public/assets/brand/brand-assets.js?v=2027.4"></script>
+    <script src="./public/assets/brand/brand-assets.js?v=2027.5"></script>
     <!-- Three.js & GSAP ScrollTrigger -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-    <script defer src="./public/app-3d-bundle.js?v=2027.4"></script>
+    <script defer src="./public/app-3d-bundle.js?v=2027.5"></script>
   </head>
   <body class="bg-keraton text-ivory antialiased selection:bg-kawung-gold selection:text-keraton">
     <div id="root">

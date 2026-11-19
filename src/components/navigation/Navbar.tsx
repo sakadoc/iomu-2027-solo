@@ -33,7 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-kawung-gold/30 bg-keraton/95 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-kawung-gold/30 bg-keraton/95 backdrop-blur-md iomu-kawung-accent">
       {/* Row 1: Official Co-Branding Pill + Utility Controls */}
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-3 py-2 sm:px-6">
         {/* Official Co-Branding Pill: PERDOKI · IDI | IOMU */}
@@ -128,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Row 2: Full-Width Unclipped Chapter Navigation Ribbon */}
-      <div className="border-t border-kawung-gold/25 bg-keraton/95">
+      <div className="border-t border-kawung-gold/25 bg-keraton/35">
         <nav
           aria-label="Main navigation"
           className="no-scrollbar mx-auto flex max-w-[1440px] items-center justify-start gap-1 overflow-x-auto px-3 py-1.5 sm:px-6 lg:flex-wrap lg:justify-center"

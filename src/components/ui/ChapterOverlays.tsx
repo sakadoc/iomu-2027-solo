@@ -211,7 +211,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
             {EVENT_CONFIG.welcomeMessages.map((msg) => (
               <article
                 key={msg.id}
-                className="rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-7"
+                className="rounded-3xl border-2 border-kawung-gold/75 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-7"
               >
                 <div className="flex items-start gap-4 border-b border-kawung-gold/30 pb-4">
                   <div className="iomu-arch-frame flex h-20 w-16 shrink-0 flex-col items-center justify-center bg-emerald/75 p-2 text-center">
@@ -254,7 +254,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         className="flex min-h-[125vh] items-center px-4 py-24 sm:px-8"
       >
         <div className="mx-auto grid w-full max-w-7xl items-start gap-8 lg:grid-cols-12">
-          <div className="pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md lg:col-span-5 sm:p-8">
+          <div className="pointer-events-auto rounded-3xl border border-kawung-gold/60 bg-keraton/90 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent lg:col-span-5 sm:p-8">
             <span className="font-script text-3xl text-light-gold">Heritage City</span>
             <p className="mt-1 font-display text-xs font-bold uppercase tracking-[0.18em] text-kawung-gold">
               02 / 09 · Welcome to Surakarta — The Heritage City
@@ -322,7 +322,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="3"
         className="flex min-h-[120vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+        <div className="pointer-events-auto mx-auto w-full max-w-6xl rounded-3xl border-2 border-kawung-gold/70 bg-keraton/92 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
           <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
             <div className="space-y-4 lg:col-span-7">
               <span className="font-script text-3xl text-light-gold">The Conference</span>
@@ -342,7 +342,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
                 {CONFERENCE_PILLARS.map((pillar) => (
                   <div
                     key={pillar.id}
-                    className="rounded-2xl border border-kawung-gold/40 bg-emerald/55 p-4"
+                    className="rounded-2xl border border-kawung-gold/40 bg-emerald/55 p-4 backdrop-blur-sm iomu-kawung-accent"
                   >
                     <span className="inline-block rounded-full bg-keraton/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">
                       {pillar.badge}
@@ -509,7 +509,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="5"
         className="flex min-h-[140vh] items-center px-4 py-24 sm:px-8"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+        <div className="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
           <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
             <div>
               <span className="font-script text-3xl text-light-gold">Distinguished Faculty</span>
@@ -561,7 +561,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
                   key={speaker.id}
                   type="button"
                   onClick={() => onSelectSpeaker(speaker)}
-                  className="group flex flex-col items-center rounded-2xl border border-kawung-gold/50 bg-emerald/45 p-3.5 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
+                  className="group flex flex-col items-center rounded-2xl border border-kawung-gold/50 bg-emerald/45 p-3.5 text-center backdrop-blur-sm iomu-kawung-accent transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
                 >
                   <div className="iomu-arch-frame flex h-28 w-24 flex-col items-center justify-center bg-keraton p-2 shadow-md ring-2 ring-ivory/90">
                     <User className="h-6 w-6 text-light-gold" />
@@ -615,7 +615,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
                   key={speaker.id}
                   type="button"
                   onClick={() => onSelectSpeaker(speaker)}
-                  className="group flex flex-col items-center rounded-2xl border border-kawung-gold/45 bg-emerald/40 p-3 text-center transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
+                  className="group flex flex-col items-center rounded-2xl border border-kawung-gold/45 bg-emerald/40 p-3 text-center backdrop-blur-sm iomu-kawung-accent transition hover:-translate-y-1 hover:border-kawung-gold hover:bg-emerald/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
                 >
                   <div className="iomu-arch-frame flex h-24 w-20 flex-col items-center justify-center bg-keraton p-2 shadow-sm ring-2 ring-ivory/85">
                     <User className="h-5 w-5 text-light-gold" />
@@ -761,7 +761,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
         data-chapter-index="7"
         className="flex min-h-[135vh] items-center px-3 py-16 sm:px-8 sm:py-24"
       >
-        <div className="pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md sm:p-10">
+        <div className="pointer-events-auto mx-auto w-full max-w-7xl rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-5 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
           <div className="flex flex-col justify-between gap-4 border-b border-kawung-gold/30 pb-6 md:flex-row md:items-end">
             <div>
               <span className="font-script text-3xl text-light-gold">Explore Solo</span>
@@ -785,7 +785,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
             {SOLO_DESTINATIONS.map((dest) => (
               <article
                 key={dest.id}
-                className="flex flex-col overflow-hidden rounded-3xl border border-kawung-gold/55 bg-emerald/45 text-ivory transition hover:-translate-y-1 hover:border-kawung-gold"
+                className="flex flex-col overflow-hidden rounded-3xl border border-kawung-gold/55 bg-emerald/45 text-ivory backdrop-blur-sm iomu-kawung-accent transition hover:-translate-y-1 hover:border-kawung-gold"
               >
                 <div className="p-4 pb-0">
                   <div className="iomu-arch-frame overflow-hidden bg-keraton">
@@ -884,7 +884,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
           </div>
 
           {/* Primary Featured Hotel: Alila Solo */}
-          <article className="rounded-3xl border-2 border-kawung-gold bg-keraton p-6 text-ivory shadow-gold sm:p-8">
+          <article className="rounded-3xl border-2 border-kawung-gold bg-keraton/95 p-6 text-ivory shadow-gold backdrop-blur-md iomu-kawung-accent sm:p-8">
             <div className="grid gap-6 lg:grid-cols-12 lg:items-center">
               <div className="space-y-3 lg:col-span-7">
                 <span className="inline-block rounded-full border border-kawung-gold bg-emerald px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-light-gold">
@@ -914,7 +914,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-kawung-gold/45 bg-emerald/60 p-5 lg:col-span-5">
+              <div className="rounded-2xl border border-kawung-gold/45 bg-emerald/60 p-5 backdrop-blur-sm iomu-kawung-accent lg:col-span-5">
                 <p className="font-display text-xs font-bold uppercase tracking-wider text-light-gold">
                   Property Highlights
                 </p>
@@ -1003,7 +1003,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
             </p>
           </div>
 
-          <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-kawung-gold bg-keraton px-5 py-4 text-ivory sm:flex-row sm:items-center">
+          <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-kawung-gold bg-keraton/95 px-5 py-4 text-ivory backdrop-blur-sm iomu-kawung-accent sm:flex-row sm:items-center">
             <div className="flex items-start gap-3">
               <Info className="mt-0.5 h-5 w-5 shrink-0 text-kawung-gold" />
               <div>
