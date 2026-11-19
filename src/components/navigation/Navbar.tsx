@@ -44,32 +44,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             handleNav('home');
           }}
           aria-label="IOMU 2027 Home — Co-branded PERDOKI, IDI, and IOMU"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-kawung-gold bg-white px-2.5 py-1 transition hover:border-light-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold sm:gap-2 sm:px-4 sm:py-1.5"
+          className="inline-flex shrink-0 items-center overflow-hidden rounded-full bg-white shadow-sm transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
         >
           <img
-            src={EVENT_CONFIG.assets.logoPerdoki}
-            alt="PERDOKI"
-            className="h-6 w-6 object-contain sm:h-8 sm:w-8"
-          />
-          <span aria-hidden="true" className="text-xs font-bold text-dark-gold">
-            ·
-          </span>
-          <img
-            src={EVENT_CONFIG.assets.logoIdi}
-            alt="IDI"
-            className="h-6 w-6 object-contain sm:h-8 sm:w-8"
-          />
-          <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-kawung-gold/70 sm:h-6" />
-          {/* Minimum 160px width enforced on desktop/tablet; compact emblem fallback on tiny screens */}
-          <img
-            src={EVENT_CONFIG.assets.logoLightBg}
-            alt="IOMU 2027 — Indonesian Occupational Medicine Updates"
-            className="hidden h-9 w-[164px] object-contain sm:block"
-          />
-          <img
-            src={EVENT_CONFIG.assets.logoEmblem}
-            alt="IOMU 2027"
-            className="h-6 w-6 object-contain sm:hidden"
+            src={EVENT_CONFIG.assets.logoHeaderCobrand}
+            alt="PERDOKI · IDI | IOMU Solo 2027"
+            className="h-8 w-auto object-contain sm:h-11 md:h-12"
           />
         </a>
 

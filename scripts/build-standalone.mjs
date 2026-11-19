@@ -20,6 +20,7 @@ const assetKeys = {
   logoEmblem: 'logo-iomu-emblem.png',
   logoPerdoki: 'logo-perdoki.png',
   logoIdi: 'logo-idi.png',
+  logoHeaderCobrand: 'logo-header-cobrand.jpg',
   kawungGold: 'pola-kawung-emas.png',
   kawungGreen: 'pola-kawung-hijau.png',
   gununganGold: 'gunungan-emas.png',

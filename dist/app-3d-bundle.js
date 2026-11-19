@@ -10,6 +10,7 @@
     logoEmblem: './public/assets/brand/logo-iomu-emblem.png',
     logoPerdoki: './public/assets/brand/logo-perdoki.png',
     logoIdi: './public/assets/brand/logo-idi.png',
+    logoHeaderCobrand: './public/assets/brand/logo-header-cobrand.jpg',
     kawungGold: './public/assets/brand/pola-kawung-emas.png',
     kawungGreen: './public/assets/brand/pola-kawung-hijau.png',
     gununganGold: './public/assets/brand/gunungan-emas.png',
@@ -1823,13 +1824,8 @@
       <header class="fixed inset-x-0 top-0 z-40 border-b border-kawung-gold/30 bg-keraton/95 backdrop-blur-md">
         <!-- Row 1: Official Co-Branding Pill + Utility Controls -->
         <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-3 py-2 sm:px-6">
-          <a href="#home" data-scroll-target="home" class="inline-flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-full border-2 border-kawung-gold bg-white px-2.5 py-1 sm:px-4 sm:py-1.5">
-            <img src="${ASSETS.logoPerdoki}" alt="PERDOKI" class="h-6 w-6 object-contain sm:h-8 sm:w-8" />
-            <span class="text-xs font-bold text-dark-gold">·</span>
-            <img src="${ASSETS.logoIdi}" alt="IDI" class="h-6 w-6 object-contain sm:h-8 sm:w-8" />
-            <span class="mx-0.5 h-5 sm:h-6 w-px bg-kawung-gold/70"></span>
-            <img src="${ASSETS.logoLightBg}" alt="IOMU 2027" class="hidden h-9 w-[164px] object-contain sm:block" />
-            <img src="${ASSETS.logoEmblem}" alt="IOMU 2027" class="h-6 w-6 object-contain sm:hidden" />
+          <a href="#home" data-scroll-target="home" aria-label="IOMU 2027 Home — Co-branded PERDOKI, IDI, and IOMU" class="inline-flex shrink-0 items-center overflow-hidden rounded-full bg-white shadow-sm transition hover:opacity-95">
+            <img src="${ASSETS.logoHeaderCobrand}" alt="PERDOKI · IDI | IOMU Solo 2027" class="h-8 sm:h-11 md:h-12 w-auto object-contain" />
           </a>
 
           <div class="flex shrink-0 items-center gap-1 sm:gap-2">
