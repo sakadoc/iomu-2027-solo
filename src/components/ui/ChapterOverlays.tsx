@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -41,6 +41,7 @@ import {
 } from '../../services/registrationService';
 import { Language, UI_STRINGS } from '../../i18n/translations';
 import { SpeakerArcCarousel, SpeakerArcCarouselLabels } from './SpeakerArcCarousel';
+import { useScrollFx } from '../../hooks/useScrollFx';
 
 interface ChapterOverlaysProps {
   lang: Language;
@@ -72,6 +73,8 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
     'All'
   );
   const [speakerSearch, setSpeakerSearch] = useState('');
+  const overlayRootRef = useRef<HTMLDivElement>(null);
+  useScrollFx(overlayRootRef);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>('day1-tba-1');
   const [regForm, setRegForm] = useState<RegistrationDraftPayload>({
     fullName: '',
@@ -124,6 +127,7 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
 
   return (
     <div
+      ref={overlayRootRef}
       className={`relative z-10 pointer-events-none transition-opacity duration-300 ${
         isInspecting3D ? 'opacity-10 [&_*]:pointer-events-none' : 'opacity-100'
       }`}

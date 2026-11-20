@@ -2211,6 +2211,11 @@
     });
 
     if (rowEl) {
+      rowEl.addEventListener('iomufx:in', () => {
+        if (state.prefersReducedMotion || r.pos === null || r.drag) return;
+        r.target = null;
+        r.vel = 3.2;
+      });
       rowEl.addEventListener('mouseenter', () => {
         r.hover = true;
       });
@@ -2413,6 +2418,267 @@
       `;
     }
     return document.getElementById('iomu-ui-root');
+  }
+
+  // ===================================================================
+  // SCROLL FX — panels enter on scroll and react to scroll position.
+  //  • Entrance (replays when you scroll back up past a panel):
+  //      rise · zoom · left/right (3D swing) · tilt (rises out of the 3D world) · clip (wipe)
+  //  • Zoom on scroll: panels grow to full size as they reach the viewport,
+  //    settle back slightly as they leave; the hero band zooms through & fades.
+  //  • Staggered contents: headings, cards, tabs and form rows cascade in.
+  //  • Gold underline draws under section headings.
+  //  • Parallax photos inside frames; cursor-follow 3D tilt + gold glare on cards.
+  // Uses independent CSS `translate` / `rotate` / `scale` so it never fights
+  // existing `transform`s (diagonal hero band, Tailwind hover lifts).
+  // Disabled entirely under prefers-reduced-motion.
+  // ===================================================================
+  const FX_PLAN = [
+    { sel: '#home .iomu-diagonal-band', fx: 'zoom', minScale: 0.84, exit: 'zoomfade' },
+    { sel: '#home article', fx: 'alt', stagger: 160 },
+    { sel: '#about > div > .pointer-events-auto', fx: 'alt', stagger: 160 },
+    { sel: '#conference > .pointer-events-auto', fx: 'tilt' },
+    { sel: '#workshops > .pointer-events-auto', fx: 'rise' },
+    { sel: '#speakers .iomu-sp-head', fx: 'rise', noScale: true },
+    { sel: '#speakers .iomu-sp-row', fx: 'rise', noScale: true, stagger: 140 },
+    { sel: '#program > .pointer-events-auto', fx: 'tilt' },
+    { sel: '#explore-solo > .pointer-events-auto', fx: 'clip' },
+    { sel: '#accommodation > .pointer-events-auto', fx: 'zoom', minScale: 0.88 },
+    { sel: '#registration > .pointer-events-auto', fx: 'rise' },
+  ];
+  const FX_CARD_SEL = 'article, figure, form > div, .grid > div, .grid > button, .grid > article';
+  const FX_HEAD_SEL = '.font-script, h2, .iomu-sp-pill, .iomu-sp-script, .iomu-sp-desc, .iomu-sp-search';
+  const FX_TILT_SEL = 'article, figure, .grid > button';
+  const FX_EASE = 'cubic-bezier(.16,1,.3,1)';
+
+  const FX_CSS = `
+.iomu-fx-stage{perspective:1600px}
+.iomu-fx{transition:opacity .9s ${FX_EASE},translate 1.1s ${FX_EASE},rotate 1.1s ${FX_EASE},clip-path 1.2s ${FX_EASE};transition-delay:calc(var(--fx-d,0) * 1ms)}
+.iomu-fx:not(.is-in){opacity:0;transition-delay:0ms}
+.iomu-fx--rise:not(.is-in){translate:0 80px}
+.iomu-fx--zoom:not(.is-in){translate:0 48px}
+.iomu-fx--left:not(.is-in){translate:-110px 0;rotate:y 14deg}
+.iomu-fx--right:not(.is-in){translate:110px 0;rotate:y -14deg}
+.iomu-fx--tilt{transform-origin:50% 100%}
+.iomu-fx--tilt:not(.is-in){translate:0 90px;rotate:x 22deg}
+.iomu-fx--clip{clip-path:inset(-80px round 24px)}
+.iomu-fx--clip:not(.is-in){clip-path:inset(18% 26% round 24px)}
+.iomu-fx.is-in{opacity:1;translate:0 0;rotate:none}
+.iomu-fx:not(.is-in) .iomu-fx-child{opacity:0}
+.iomu-fx.is-in .iomu-fx-child{animation:iomuFxChildIn .9s ${FX_EASE} backwards;animation-delay:calc(var(--fx-d,0) * 1ms + 180ms + var(--fx-i,0) * 75ms)}
+@keyframes iomuFxChildIn{from{opacity:0;translate:0 26px}to{opacity:1;translate:0 0}}
+.iomu-fx-title::after{content:"";display:block;width:64px;height:2px;margin-top:12px;border-radius:2px;background:linear-gradient(90deg,#C69C54,#DDBE82);transform-origin:0 50%;scale:0 1;transition:scale 1.1s ${FX_EASE}}
+.iomu-fx-title--center::after{margin-left:auto;margin-right:auto;transform-origin:50% 50%}
+.iomu-fx.is-in .iomu-fx-title::after{scale:1 1;transition-delay:calc(var(--fx-d,0) * 1ms + 520ms)}
+.iomu-fx-parallax{scale:1.14}
+.iomu-tilt-group{perspective:1100px}
+.iomu-tilt:not(.absolute):not(.fixed){position:relative}
+.iomu-tilt::after{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;pointer-events:none;background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%),rgba(221,190,130,.24),rgba(221,190,130,0) 55%);opacity:0;transition:opacity .35s ease}
+.iomu-tilt.is-tilting::after{opacity:1}
+.iomu-fx-instant .iomu-fx,.iomu-fx-instant .iomu-fx *{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion:reduce){.iomu-fx,.iomu-fx-child,.iomu-fx-parallax{transition:none!important;animation:none!important;opacity:1!important;translate:none!important;rotate:none!important;scale:none!important;clip-path:none!important;filter:none!important}}
+`;
+
+  let fxDestroy = null;
+  let fxInitCount = 0;
+
+  function ensureFxStyles() {
+    if (document.getElementById('iomu-fx-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'iomu-fx-styles';
+    style.textContent = FX_CSS;
+    document.head.appendChild(style);
+  }
+
+  function initScrollFx(root, options = {}) {
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
+    ensureFxStyles();
+
+    const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    const easeOut = (v) => 1 - Math.pow(1 - v, 3);
+    const items = [];
+    const parallax = [];
+    const cleanups = [];
+    const touched = new Set();
+    const canTilt = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    const addClass = (el, ...cls) => {
+      el.classList.add(...cls);
+      touched.add(el);
+    };
+
+    FX_PLAN.forEach((plan) => {
+      const els = Array.from(root.querySelectorAll(plan.sel));
+      els.forEach((el, idx) => {
+        if (items.some((it) => it.el === el)) return;
+        let fx = plan.fx;
+        if (fx === 'alt') fx = idx % 2 === 0 ? 'left' : 'right';
+        addClass(el, 'iomu-fx', `iomu-fx--${fx}`);
+        if (el.parentElement && /^(left|right|tilt)$/.test(fx)) addClass(el.parentElement, 'iomu-fx-stage');
+        el.style.setProperty('--fx-d', String(idx * (plan.stagger || 0)));
+
+        // Cards (outermost wins over nested cards) and headings cascade in.
+        const cardCands = Array.from(el.querySelectorAll(FX_CARD_SEL));
+        const cards = cardCands.filter((c) => !cardCands.some((o) => o !== c && c.contains(o)));
+        const heads = Array.from(el.querySelectorAll(FX_HEAD_SEL)).filter((h) => !cards.some((c) => c.contains(h)));
+        const kids = cards.concat(heads).sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+        kids.forEach((kid, k) => {
+          addClass(kid, 'iomu-fx-child');
+          kid.style.setProperty('--fx-i', String(Math.min(k, 12)));
+        });
+
+        // Gold underline under the section heading.
+        el.querySelectorAll('h2').forEach((h) => {
+          const cls = h.className || '';
+          if (!/sm:text-3xl|sm:text-4xl|text-3xl|iomu-sp-title/.test(cls)) return;
+          addClass(h, 'iomu-fx-title');
+          if (window.getComputedStyle(h).textAlign === 'center') addClass(h, 'iomu-fx-title--center');
+        });
+
+        el.querySelectorAll('figure img, .iomu-arch-frame img').forEach((img) => {
+          addClass(img, 'iomu-fx-parallax');
+          parallax.push(img);
+        });
+
+        if (canTilt) {
+          cards
+            .filter((c) => c.matches(FX_TILT_SEL) && !c.closest('form') && !c.closest('#program'))
+            .forEach((card) => bindTilt(card));
+        }
+
+        items.push({
+          el,
+          in: false,
+          noScale: !!plan.noScale,
+          minScale: plan.minScale || 0.94,
+          exit: plan.exit || '',
+        });
+      });
+    });
+
+    function bindTilt(card) {
+      if (card.classList.contains('iomu-fx')) return;
+      addClass(card, 'iomu-tilt');
+      if (card.parentElement) addClass(card.parentElement, 'iomu-tilt-group');
+      const onMove = (e) => {
+        if (e.pointerType !== 'mouse') return;
+        const r = card.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const px = clamp01((e.clientX - r.left) / r.width);
+        const py = clamp01((e.clientY - r.top) / r.height);
+        const max = Math.max(2, Math.min(7, (7 * 320) / r.width));
+        const rx = (0.5 - py) * 2 * max;
+        const ry = (px - 0.5) * 2 * max;
+        const angle = Math.hypot(rx, ry);
+        card.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
+        card.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
+        card.classList.add('is-tilting');
+        card.style.rotate = angle < 0.01 ? '' : `${(rx / angle).toFixed(4)} ${(ry / angle).toFixed(4)} 0 ${angle.toFixed(2)}deg`;
+      };
+      const onLeave = () => {
+        card.classList.remove('is-tilting');
+        const from = card.style.rotate;
+        card.style.rotate = '';
+        if (from && card.animate) card.animate([{ rotate: from }, { rotate: '0 1 0 0deg' }], { duration: 450, easing: FX_EASE });
+      };
+      card.addEventListener('pointermove', onMove);
+      card.addEventListener('pointerleave', onLeave);
+      cleanups.push(() => {
+        card.removeEventListener('pointermove', onMove);
+        card.removeEventListener('pointerleave', onLeave);
+        card.style.rotate = '';
+      });
+    }
+
+    function setIn(it, on) {
+      if (it.in === on) return;
+      it.in = on;
+      it.el.classList.toggle('is-in', on);
+      if (on) it.el.dispatchEvent(new CustomEvent('iomufx:in', { bubbles: false }));
+    }
+
+    // Layout position (ignores our own translate/rotate/scale, so a panel that is
+    // still offset by its entrance pose is measured where it will land).
+    const layoutRect = (el, scrollY) => {
+      let y = 0;
+      for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+      const top = y - scrollY;
+      return { top, bottom: top + el.offsetHeight, height: el.offsetHeight };
+    };
+
+    let raf = 0;
+    function update() {
+      raf = 0;
+      const vh = window.innerHeight || 1;
+      const sy = window.scrollY || window.pageYOffset || 0;
+      const rects = items.map((it) => layoutRect(it.el, sy));
+      const imgRects = parallax.map((img) => (img.parentElement || img).getBoundingClientRect());
+      items.forEach((it, k) => {
+        const r = rects[k];
+        if (!it.in && r.top < vh * 0.88 && r.bottom > vh * 0.06) setIn(it, true);
+        else if (it.in && r.top > vh * 1.02) setIn(it, false);
+        if (it.noScale) return;
+        const enter = easeOut(clamp01((vh - r.top) / (vh * 0.7)));
+        let s = it.minScale + (1 - it.minScale) * enter;
+        if (it.exit === 'zoomfade') {
+          const e = clamp01((vh * 0.45 - (r.top + r.height / 2)) / (vh * 0.55));
+          s *= 1 + 0.1 * e;
+          it.el.style.filter = e > 0.001 ? `opacity(${(1 - 0.75 * e).toFixed(3)})` : '';
+        } else {
+          const exit = clamp01((vh * 0.3 - r.bottom) / (vh * 0.3));
+          s *= 1 - 0.04 * exit;
+        }
+        it.el.style.scale = s.toFixed(4);
+      });
+      parallax.forEach((img, k) => {
+        const r = imgRects[k];
+        const offset = r.top + r.height / 2 - vh / 2;
+        const y = Math.max(-22, Math.min(22, -offset * 0.06));
+        img.style.translate = `0 ${y.toFixed(1)}px`;
+      });
+    }
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+
+    // Keyboard users never land on an invisible panel.
+    const onFocusIn = (e) => {
+      const it = items.find((i) => i.el.contains(e.target));
+      if (it) setIn(it, true);
+    };
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    root.addEventListener('focusin', onFocusIn);
+
+    if (options.instant) {
+      // Re-render (e.g. language switch): show what is already on screen without replaying.
+      root.classList.add('iomu-fx-instant');
+      update();
+      void root.offsetHeight;
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('iomu-fx-instant')));
+    } else {
+      update();
+    }
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      root.removeEventListener('focusin', onFocusIn);
+      cleanups.forEach((fn) => fn());
+      touched.forEach((el) => {
+        el.classList.remove('iomu-fx', 'is-in', 'iomu-fx-child', 'iomu-fx-title', 'iomu-fx-title--center', 'iomu-fx-parallax', 'iomu-fx-stage', 'iomu-tilt', 'iomu-tilt-group', 'is-tilting');
+        Array.from(el.classList).filter((c) => c.startsWith('iomu-fx--')).forEach((c) => el.classList.remove(c));
+        ['scale', 'translate', 'filter', '--fx-d', '--fx-i', '--mx', '--my'].forEach((p) => el.style.removeProperty(p));
+      });
+    };
+  }
+
+  function refreshScrollFx() {
+    if (fxDestroy) fxDestroy();
+    fxDestroy = initScrollFx(document.getElementById('iomu-chapters-wrapper'), { instant: fxInitCount > 0 });
+    fxInitCount += 1;
   }
 
   function renderUI() {
@@ -2801,6 +3067,7 @@ ${arcRowHtml('sem')}
     renderAgendaPanel();
     renderDetailDrawer();
     updateHUD();
+    refreshScrollFx();
   }
 
   function bindUIEvents() {

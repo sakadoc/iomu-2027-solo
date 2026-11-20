@@ -238,6 +238,20 @@ export const SpeakerArcCarousel: React.FC<SpeakerArcCarouselProps> = ({
     return () => io.disconnect();
   }, [hasItems]);
 
+  // When the row scrolls into view (scroll FX), give the strip a little momentum.
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row) return undefined;
+    const onReveal = () => {
+      const p = physics.current;
+      if (reducedMotion || p.pos === null || p.drag) return;
+      p.target = null;
+      p.vel = 3.2;
+    };
+    row.addEventListener('iomufx:in', onReveal);
+    return () => row.removeEventListener('iomufx:in', onReveal);
+  }, [reducedMotion]);
+
   // Animation loop.
   useEffect(() => {
     let raf = 0;
