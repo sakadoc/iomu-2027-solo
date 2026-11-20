@@ -106,6 +106,9 @@ function buildStaticTailwindCss() {
     'iomu-banner-logo',
   ]);
 
+  // Classes styled by the bundle itself (speaker carousel injects its own <style>).
+  const CUSTOM_CLASS_PREFIXES = ['iomu-arc-', 'iomu-sp', 'iomu-sr-only'];
+
   const COLORS = {
     keraton: [20, 48, 43],
     emerald: [31, 74, 66],
@@ -638,7 +641,7 @@ function buildStaticTailwindCss() {
   const unhandled = [];
 
   for (const fullCls of Array.from(tokens).sort()) {
-    if (CUSTOM_CLASSES.has(fullCls)) continue;
+    if (CUSTOM_CLASSES.has(fullCls) || CUSTOM_CLASS_PREFIXES.some((p) => fullCls.startsWith(p))) continue;
 
     const parts = fullCls.split(':');
     const util = parts[parts.length - 1];

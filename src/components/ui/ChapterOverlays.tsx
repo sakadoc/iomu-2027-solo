@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -40,6 +40,7 @@ import {
   submitParticipantRegistration,
 } from '../../services/registrationService';
 import { Language, UI_STRINGS } from '../../i18n/translations';
+import { SpeakerArcCarousel, SpeakerArcCarouselLabels } from './SpeakerArcCarousel';
 
 interface ChapterOverlaysProps {
   lang: Language;
@@ -71,8 +72,6 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
     'All'
   );
   const [speakerSearch, setSpeakerSearch] = useState('');
-  const [speakerTrackFilter, setSpeakerTrackFilter] = useState<'all' | 'workshop' | 'conference'>('all');
-  const [showAllSpeakers, setShowAllSpeakers] = useState(false);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>('day1-tba-1');
   const [regForm, setRegForm] = useState<RegistrationDraftPayload>({
     fullName: '',
@@ -90,32 +89,32 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
   const activeDay = AGENDA_DAYS.find((d) => d.id === activeDayId) || AGENDA_DAYS[0];
 
   const normalizedSearch = speakerSearch.trim().toLowerCase();
-  const allFilteredSpeakers = useMemo(() => {
-    let list: SpeakerProfile[] = [];
-    if (speakerTrackFilter === 'all' || speakerTrackFilter === 'workshop') {
-      list = list.concat(WORKSHOP_SPEAKERS);
-    }
-    if (speakerTrackFilter === 'all' || speakerTrackFilter === 'conference') {
-      list = list.concat(CONFERENCE_SPEAKERS);
-    }
-    return list.filter((sp) => {
-      if (!normalizedSearch) return true;
-      return (
-        sp.positionTitle.toLowerCase().includes(normalizedSearch) ||
-        sp.slotLabel.toLowerCase().includes(normalizedSearch) ||
-        sp.fullName.toLowerCase().includes(normalizedSearch) ||
-        sp.presentationTitle.toLowerCase().includes(normalizedSearch) ||
-        sp.institution.toLowerCase().includes(normalizedSearch)
-      );
-    });
-  }, [speakerTrackFilter, normalizedSearch]);
-
-  const visibleSpeakers = useMemo(() => {
-    if (normalizedSearch || showAllSpeakers || allFilteredSpeakers.length <= 16) {
-      return allFilteredSpeakers;
-    }
-    return allFilteredSpeakers.slice(0, 16);
-  }, [allFilteredSpeakers, normalizedSearch, showAllSpeakers]);
+  const matchesSpeakerSearch = (sp: SpeakerProfile) =>
+    !normalizedSearch ||
+    [sp.positionTitle, sp.slotLabel, sp.fullName, sp.presentationTitle, sp.institution].some((v) =>
+      v.toLowerCase().includes(normalizedSearch)
+    );
+  const filteredWorkshopSpeakers = useMemo(
+    () => WORKSHOP_SPEAKERS.filter(matchesSpeakerSearch),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [normalizedSearch]
+  );
+  const filteredSeminarSpeakers = useMemo(
+    () => CONFERENCE_SPEAKERS.filter(matchesSpeakerSearch),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [normalizedSearch]
+  );
+  const speakerCarouselLabels: SpeakerArcCarouselLabels = {
+    people: t.spPeople,
+    of: t.spOf,
+    dragHint: t.spDragHint,
+    pause: t.spAutoPause,
+    resume: t.spAutoPlay,
+    prev: t.spPrev,
+    next: t.spNext,
+    viewProfile: t.spViewProfile,
+    empty: t.spEmpty,
+  };
 
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -498,193 +497,57 @@ export const ChapterOverlays: React.FC<ChapterOverlaysProps> = ({
       </section>
 
       {/* ===================================================================== */}
-      {/* SCENE 05 — SPEAKERS & EXPERTS (15 WORKSHOP + 42 CONFERENCE SPEAKERS) */}
+      {/* SCENE 05 — SPEAKERS & EXPERTS (full-bleed curved carousels, no panel box) */}
       {/* ===================================================================== */}
-      <section
-        id="speakers"
-        data-chapter-index="5"
-        className="flex min-h-[140vh] items-center px-4 py-24 sm:px-8"
-      >
-        <div className="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
-          <div className="flex flex-col gap-4 border-b border-kawung-gold/30 pb-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <span className="font-script text-3xl text-light-gold">{t.spScript}</span>
-              <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-kawung-gold">
-                {t.spTag}
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-extrabold text-ivory sm:text-3xl">
-                {t.spHeading}
-              </h2>
-              <p className="mt-2 max-w-2xl text-xs leading-relaxed text-ivory/85 sm:text-sm">
-                {t.spDescPrefix} <strong>15 {t.spFilterWs}</strong> {lang === 'id' ? 'dan' : 'and'}{' '}
-                <strong>42 {t.spFilterConf}</strong>.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              {/* Track Filter Tabs */}
-              <div className="inline-flex rounded-full border border-kawung-gold/50 bg-keraton/90 p-1 text-xs font-bold shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => setSpeakerTrackFilter('all')}
-                  className={`rounded-full px-3.5 py-1.5 transition ${
-                    speakerTrackFilter === 'all'
-                      ? 'bg-kawung-gold text-keraton shadow-sm'
-                      : 'text-ivory/80 hover:text-light-gold'
-                  }`}
-                >
-                  {t.spFilterAll} (57)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSpeakerTrackFilter('workshop')}
-                  className={`rounded-full px-3.5 py-1.5 transition ${
-                    speakerTrackFilter === 'workshop'
-                      ? 'bg-kawung-gold text-keraton shadow-sm'
-                      : 'text-ivory/80 hover:text-light-gold'
-                  }`}
-                >
-                  {t.spFilterWs} (15)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSpeakerTrackFilter('conference')}
-                  className={`rounded-full px-3.5 py-1.5 transition ${
-                    speakerTrackFilter === 'conference'
-                      ? 'bg-kawung-gold text-keraton shadow-sm'
-                      : 'text-ivory/80 hover:text-light-gold'
-                  }`}
-                >
-                  {t.spFilterConf} (42)
-                </button>
-              </div>
-
-              {/* Search Box */}
-              <div className="relative w-full sm:w-64">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-kawung-gold" />
-                <input
-                  type="search"
-                  value={speakerSearch}
-                  onChange={(e) => setSpeakerSearch(e.target.value)}
-                  placeholder={t.spSearchPlaceholder}
-                  aria-label="Filter speakers by role or topic"
-                  className="w-full rounded-full border border-kawung-gold/60 bg-emerald/60 py-2 pl-9 pr-4 text-xs text-ivory placeholder:text-ivory/60 focus:border-light-gold focus:outline-none"
-                />
-              </div>
+      <section id="speakers" data-chapter-index="5" className="flex min-h-[140vh] items-center py-24">
+        <div className="iomu-sp pointer-events-auto w-full">
+          <div className="iomu-sp-head">
+            <span className="iomu-sp-pill">{t.spTag}</span>
+            <span className="iomu-sp-script">{t.spScript}</span>
+            <h2 className="iomu-sp-title">{t.spHeading}</h2>
+            <p className="iomu-sp-desc">
+              {t.spDescPrefix} <strong>15 {t.spWsTitle}</strong> {lang === 'id' ? 'dan' : 'and'}{' '}
+              <strong>42 {t.spSemTitle}</strong>. {t.spArcHint}
+            </p>
+            <div className="iomu-sp-search">
+              <label htmlFor="iomu-speaker-search" className="sr-only">
+                {t.spSearchLabel}
+              </label>
+              <Search />
+              <input
+                id="iomu-speaker-search"
+                type="search"
+                autoComplete="off"
+                value={speakerSearch}
+                onChange={(e) => setSpeakerSearch(e.target.value)}
+                placeholder={t.spSearchPlaceholder}
+              />
             </div>
           </div>
 
-          {/* Speaker Cards Grid & Showcase Controls */}
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="font-display text-base font-extrabold text-light-gold sm:text-lg">
-                  {allFilteredSpeakers.length} {t.spHeading}
-                </span>
-                <span className="rounded-full border border-kawung-gold/50 bg-emerald/60 px-3 py-0.5 text-[10px] font-bold text-light-gold">
-                  Hotel Alila Solo
-                </span>
-              </div>
-              {!normalizedSearch && allFilteredSpeakers.length > 16 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllSpeakers((prev) => !prev)}
-                  className="rounded-full border border-kawung-gold bg-kawung-gold px-5 py-2 font-display text-xs font-bold text-keraton shadow-sm transition hover:bg-light-gold"
-                >
-                  {showAllSpeakers
-                    ? t.showCompact
-                    : `${t.showAllPrefix} (${allFilteredSpeakers.length})`}
-                </button>
-              )}
-            </div>
+          <SpeakerArcCarousel
+            variant="ws"
+            speakers={filteredWorkshopSpeakers}
+            total={WORKSHOP_SPEAKERS.length}
+            eyebrow={t.spWsEyebrow}
+            title={t.spWsTitle}
+            searchTerm={speakerSearch}
+            suspended={isInspecting3D}
+            labels={speakerCarouselLabels}
+            onSelectSpeaker={onSelectSpeaker}
+          />
 
-            {visibleSpeakers.length === 0 ? (
-              <div className="col-span-full py-12 text-center text-ivory/60">
-                <p className="text-sm">
-                  {lang === 'id'
-                    ? `Tidak ada pembicara yang cocok dengan pencarian "${speakerSearch}".`
-                    : `No speakers found matching "${speakerSearch}".`}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-                {visibleSpeakers.map((sp) => {
-                  const isWs = sp.track === 'workshop';
-                  return (
-                    <button
-                      key={sp.id}
-                      type="button"
-                      onClick={() => onSelectSpeaker(sp)}
-                      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-kawung-gold/45 bg-gradient-to-b from-keraton/95 via-keraton/90 to-emerald/85 p-5 text-left text-ivory shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-kawung-gold hover:shadow-[0_20px_45px_rgba(198,156,84,0.25)] iomu-kawung-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold"
-                    >
-                      {/* Top Bar: Track Badge + Slot Number */}
-                      <div className="flex w-full items-center justify-between gap-2 border-b border-kawung-gold/25 pb-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 ${
-                            isWs ? 'bg-emerald/75 text-light-gold' : 'bg-keraton/80 text-light-gold'
-                          } px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              isWs ? 'bg-kawung-gold' : 'bg-light-gold'
-                            }`}
-                          />
-                          {isWs ? t.spFilterWs : t.spFilterConf}
-                        </span>
-                        <span className="font-display text-[11px] font-extrabold tracking-wider text-light-gold/90">
-                          {sp.slotLabel}
-                        </span>
-                      </div>
-
-                      {/* Middle: Avatar & Identification */}
-                      <div className="my-4 flex w-full items-center gap-3.5">
-                        <div className="relative shrink-0">
-                          <div className="iomu-arch-frame flex h-20 w-16 flex-col items-center justify-center bg-gradient-to-b from-emerald/80 to-keraton p-1.5 shadow-md ring-2 ring-kawung-gold/60 transition-transform duration-300 group-hover:scale-105 group-hover:ring-light-gold">
-                            <span className="text-xl">🩺</span>
-                            <span className="mt-1 font-display text-[8px] font-extrabold uppercase tracking-wider text-kawung-gold">
-                              {t.photoTba}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="truncate font-display text-sm font-extrabold leading-snug text-ivory transition-colors group-hover:text-light-gold sm:text-base">
-                            {sp.fullName}
-                          </h4>
-                          <p className="truncate text-[11px] font-semibold text-kawung-gold">
-                            {sp.titles}
-                          </p>
-                          <p className="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-ivory/80">
-                            {sp.positionTitle}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Topic Spotlight Callout */}
-                      <div className="w-full rounded-2xl border border-kawung-gold/30 bg-emerald/35 p-3 backdrop-blur-sm">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">
-                          <span>🎙️</span> <span>{t.spTopicLabel}</span>
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-xs font-semibold leading-snug text-ivory/95">
-                          {sp.presentationTitle}
-                        </p>
-                      </div>
-
-                      {/* Card Footer: Institution & View Profile Action */}
-                      <div className="mt-4 flex w-full items-center justify-between border-t border-kawung-gold/20 pt-3 text-[11px]">
-                        <span className="inline-flex max-w-[65%] items-center gap-1 truncate text-[10px] font-semibold text-ivory/70">
-                          <span>🏛️</span> <span className="truncate">{sp.institution}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 font-display text-xs font-bold text-light-gold transition duration-200 group-hover:translate-x-1 group-hover:text-ivory">
-                          <span>{t.spViewProfile}</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <SpeakerArcCarousel
+            variant="sem"
+            speakers={filteredSeminarSpeakers}
+            total={CONFERENCE_SPEAKERS.length}
+            eyebrow={t.spSemEyebrow}
+            title={t.spSemTitle}
+            searchTerm={speakerSearch}
+            suspended={isInspecting3D}
+            labels={speakerCarouselLabels}
+            onSelectSpeaker={onSelectSpeaker}
+          />
         </div>
       </section>
 

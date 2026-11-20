@@ -162,3 +162,76 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   Speakers — full-bleed curved carousel (SpeakerArcCarousel)
+   Kept in sync with the injected styles in public/app-3d-bundle.js
+   ========================================================================== */
+.iomu-sp{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:48px;color:#F4E9D7;font-family:Inter,sans-serif}
+.iomu-sp::before{content:"";position:absolute;left:0;right:0;top:-96px;bottom:-96px;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(12,31,27,0) 0%,rgba(12,31,27,.82) 14%,rgba(12,31,27,.82) 86%,rgba(12,31,27,0) 100%)}
+.iomu-sp-head{width:100%;max-width:860px;margin:0 auto;box-sizing:border-box;padding:0 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.iomu-sp-pill{display:inline-flex;align-items:center;min-height:30px;padding:0 14px;border:1px solid rgba(198,156,84,.5);border-radius:999px;background:rgba(198,156,84,.14);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#DDBE82}
+.iomu-sp-script{font-family:'Great Vibes',cursive;font-size:36px;line-height:1.1;color:#DDBE82}
+.iomu-sp-title{margin:0;font-family:Montserrat,sans-serif;font-size:clamp(32px,5vw,56px);font-weight:800;line-height:1.1;color:#F4E9D7}
+.iomu-sp-desc{margin:4px 0 0;max-width:620px;font-size:15px;line-height:1.6;color:rgba(244,233,215,.86)}
+.iomu-sp-desc strong{color:#F4E9D7}
+.iomu-sp-search{position:relative;width:100%;max-width:360px;margin-top:8px}
+.iomu-sp-search svg{position:absolute;left:15px;top:50%;width:16px;height:16px;transform:translateY(-50%);pointer-events:none}
+.iomu-sp-search input{width:100%;height:44px;box-sizing:border-box;padding:0 16px 0 40px;border:1px solid rgba(198,156,84,.6);border-radius:999px;background:rgba(31,74,66,.6);color:#F4E9D7;font-family:Inter,sans-serif;font-size:13px}
+.iomu-sp-search input::placeholder{color:rgba(244,233,215,.62)}
+.iomu-sp-search input:focus{border-color:#DDBE82;outline:none}
+.iomu-sp-search input:focus-visible{outline:2px solid #DDBE82;outline-offset:2px}
+.iomu-sp-row{display:flex;flex-direction:column;gap:8px}
+.iomu-sp-rowhead,.iomu-sp-progress{width:100%;max-width:1280px;margin:0 auto;box-sizing:border-box;padding:0 20px}
+.iomu-sp-rowhead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.iomu-sp-eyebrow{display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#C69C54}
+.iomu-sp-titleline{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:6px}
+.iomu-sp-rowtitle{margin:0;font-family:Montserrat,sans-serif;font-size:22px;font-weight:800;color:#F4E9D7}
+.iomu-sp-count{display:inline-flex;align-items:center;height:24px;padding:0 12px;border:1px solid rgba(198,156,84,.5);border-radius:999px;background:rgba(31,74,66,.6);font-size:11px;font-weight:700;color:#DDBE82}
+.iomu-sp-controls{display:flex;align-items:center;gap:10px}
+.iomu-sp-range{min-width:72px;text-align:right;font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:#DDBE82}
+.iomu-sp-nav{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid #C69C54;border-radius:999px;background:transparent;color:#F4E9D7;cursor:pointer;transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+.iomu-sp-nav--soft{border-color:rgba(198,156,84,.45);color:#DDBE82}
+.iomu-sp-nav:hover{background:#C69C54;border-color:#C69C54;color:#14302B}
+.iomu-sp-nav:focus-visible{outline:2px solid #DDBE82;outline-offset:2px}
+.iomu-sp-nav[hidden]{display:none}
+.iomu-sp-nav svg{width:18px;height:18px}
+.iomu-arc-stage{position:relative;width:100%;overflow:hidden;overflow:clip;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+.iomu-arc-stage[hidden]{display:none}
+.iomu-arc-stage--ws{height:480px}
+.iomu-arc-stage--sem{height:420px}
+.iomu-arc-stage.is-dragging{cursor:grabbing}
+.iomu-arc-stage.is-dragging .iomu-arc-card{pointer-events:none}
+.iomu-arc-ring{position:absolute;left:50%;top:50%;width:0;height:0;perspective:1400px}
+.iomu-arc-card{position:absolute;display:flex;flex-direction:column;padding:0;border:0;background:transparent;color:#F4E9D7;font:inherit;text-align:left;cursor:pointer;-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform,opacity;transform-origin:50% 50%}
+.iomu-arc-card--ws{left:-100px;top:-176px;width:200px;gap:12px}
+.iomu-arc-card--sem{left:-84px;top:-152px;width:168px;gap:10px}
+.iomu-arc-card:focus-visible{outline:none}
+.iomu-arc-photo{position:relative;display:block;overflow:hidden;background:#14302B;box-shadow:0 22px 40px -22px rgba(0,0,0,.85);transition:box-shadow .3s ease}
+.iomu-arc-card--ws .iomu-arc-photo{width:200px;height:267px;border-radius:16px}
+.iomu-arc-card--sem .iomu-arc-photo{width:168px;height:224px;border-radius:14px}
+.iomu-arc-photo::after{content:"";position:absolute;inset:0;background-image:var(--iomu-kawung-accent-url);background-size:180px auto;opacity:.07;pointer-events:none}
+.iomu-arc-card:hover .iomu-arc-photo,.iomu-arc-card:focus-visible .iomu-arc-photo{box-shadow:0 0 0 2px #DDBE82,0 26px 44px -22px rgba(0,0,0,.9)}
+.iomu-arc-photo img,.iomu-arc-photo svg{transition:transform .7s cubic-bezier(.16,1,.3,1)}
+.iomu-arc-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.iomu-arc-photo svg{position:absolute;left:11%;top:16%;width:78%;height:auto}
+.iomu-arc-card:hover .iomu-arc-photo img,.iomu-arc-card:hover .iomu-arc-photo svg{transform:scale(1.05)}
+.iomu-arc-tone-a{background:linear-gradient(180deg,#2A5C52 0%,#1F4A42 48%,#14302B 100%)}
+.iomu-arc-tone-b{background:linear-gradient(180deg,#3A5E48 0%,#22463B 50%,#132B26 100%)}
+.iomu-arc-tone-c{background:linear-gradient(180deg,#2E5560 0%,#1D3F45 50%,#122B2A 100%)}
+.iomu-arc-caption{display:flex;flex-direction:column;gap:4px;padding:0 2px}
+.iomu-arc-label{font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#C69C54}
+.iomu-arc-name{font-family:Montserrat,sans-serif;font-size:15px;font-weight:800;line-height:1.25;color:#F4E9D7;transition:color .2s ease}
+.iomu-arc-card--sem .iomu-arc-name{font-size:14px}
+.iomu-arc-card:hover .iomu-arc-name,.iomu-arc-card:focus-visible .iomu-arc-name{color:#DDBE82}
+.iomu-arc-role{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.45;color:rgba(244,233,215,.8)}
+.iomu-arc-card--sem .iomu-arc-role{font-size:11px}
+.iomu-sp-empty{width:calc(100% - 40px);max-width:1240px;margin:0 auto;box-sizing:border-box;padding:32px 16px;border:1px dashed rgba(198,156,84,.4);border-radius:18px;text-align:center;font-size:13px;color:rgba(244,233,215,.75)}
+.iomu-sp-empty[hidden]{display:none}
+.iomu-sp-progress{display:flex;align-items:center;gap:16px}
+.iomu-sp-track{position:relative;flex:1 1 auto;height:2px;overflow:hidden;border-radius:2px;background:rgba(198,156,84,.22)}
+.iomu-sp-bar{position:absolute;inset:0;display:block;background:#C69C54;transform-origin:left center;transform:scaleX(0);transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.iomu-sp-hint{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:11px;color:rgba(244,233,215,.72)}
+.iomu-sp-hint svg{width:14px;height:14px}
+.iomu-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){.iomu-arc-photo,.iomu-arc-photo img,.iomu-arc-photo svg,.iomu-sp-bar,.iomu-sp-nav,.iomu-arc-name{transition:none}}

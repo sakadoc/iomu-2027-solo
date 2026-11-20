@@ -87,8 +87,8 @@
       spScript: 'Distinguished Faculty',
       spTag: '05 / 09 · Speaker Exhibition Colonnade',
       spHeading: 'Speakers & Experts',
-      spDesc: 'Featuring two dedicated speaker lineups: <strong>15 Workshop Faculty</strong> and <strong>42 Conference Speakers</strong>. Confirmed names and portraits will appear upon Scientific Committee release.',
-      spSearchPlaceholder: 'Filter by role or topic...',
+      spDesc: 'Two dedicated speaker lineups: <strong>15 Workshop Speakers</strong> and <strong>42 Seminar Speakers</strong>. Official names and portraits follow Scientific Committee confirmation. Drag or swipe to explore, click a photo to view the profile.',
+      spSearchPlaceholder: 'Search name, role, or institution…',
       wsListTitle: '1. Workshop Speakers',
       wsListSub: 'Clinical & practical hands-on workshop instructors (Photo · Name · Position/Role)',
       wsBadge: 'Workshop Track · To Be Announced',
@@ -102,6 +102,19 @@
       spFilterConf: 'Conference Faculty',
       spTopicLabel: 'SESSION TOPIC',
       spViewProfile: 'View Profile',
+      spSearchLabel: 'Search speakers',
+      spWsEyebrow: 'Track 01 · Hands-on Clinical Workshops',
+      spWsTitle: 'Workshop Speakers',
+      spSemEyebrow: 'Track 02 · Plenary & Symposium',
+      spSemTitle: 'Seminar Speakers',
+      spPeople: 'speakers',
+      spOf: 'of',
+      spDragHint: 'Drag / swipe',
+      spAutoPause: 'Pause auto-scroll',
+      spAutoPlay: 'Resume auto-scroll',
+      spPrev: 'Scroll left',
+      spNext: 'Scroll right',
+      spEmpty: 'No speakers match',
       agScript: 'Three-Day Journey',
       agTag: '06 / 09 · Golden Event Timeline',
       agHeading: 'Conference Agenda',
@@ -197,8 +210,8 @@
       spScript: 'Jajaran Pakar',
       spTag: '05 / 09 · Galeri Pameran Pembicara',
       spHeading: 'Pembicara & Pakar',
-      spDesc: 'Menampilkan dua deretan narasumber: <strong>15 Instruktur Workshop</strong> dan <strong>42 Pembicara Konferensi</strong>. Nama serta foto resmi akan diperbarui setelah konfirmasi Komite Ilmiah.',
-      spSearchPlaceholder: 'Cari jabatan atau topik...',
+      spDesc: 'Dua deretan narasumber: <strong>15 Pembicara Workshop</strong> dan <strong>42 Pembicara Seminar</strong>. Nama dan foto resmi menyusul setelah konfirmasi Komite Ilmiah. Seret atau geser untuk menjelajah, klik foto untuk melihat profil.',
+      spSearchPlaceholder: 'Cari nama, jabatan, atau institusi…',
       wsListTitle: '1. Pembicara Workshop',
       wsListSub: 'Instruktur praktik klinis & teknis workshop (Foto · Nama · Jabatan/Peran)',
       wsBadge: 'Jalur Workshop · Akan Diumumkan',
@@ -212,6 +225,19 @@
       spFilterConf: 'Pembicara Konferensi',
       spTopicLabel: 'TOPIK SESI',
       spViewProfile: 'Lihat Profil',
+      spSearchLabel: 'Cari pembicara',
+      spWsEyebrow: 'Lini 01 · Workshop Klinis & Praktik',
+      spWsTitle: 'Pembicara Workshop',
+      spSemEyebrow: 'Lini 02 · Pleno & Simposium',
+      spSemTitle: 'Pembicara Seminar',
+      spPeople: 'orang',
+      spOf: 'dari',
+      spDragHint: 'Seret / geser',
+      spAutoPause: 'Jeda gerak otomatis',
+      spAutoPlay: 'Lanjutkan gerak otomatis',
+      spPrev: 'Geser ke kiri',
+      spNext: 'Geser ke kanan',
+      spEmpty: 'Tidak ada pembicara yang cocok dengan',
       agScript: 'Perjalanan Tiga Hari',
       agTag: '06 / 09 · Linimasa Acara Emas',
       agHeading: 'Agenda Konferensi',
@@ -314,6 +340,7 @@
     return {
       id: `workshop-speaker-${num}`,
       track: 'workshop',
+      photo: null, // isi URL/path foto resmi, mis. './assets/brand/speakers/ws-01.jpg'
       slotLabel: { en: `Workshop Faculty ${num}`, id: `Instruktur Workshop ${num}` },
       fullName: { en: 'To Be Announced', id: 'Akan Diumumkan' },
       titles: { en: 'Academic & Specialist Titles — TBA', id: 'Gelar Akademik & Spesialis — TBA' },
@@ -343,6 +370,7 @@
     return {
       id: `conf-speaker-${num}`,
       track: 'conference',
+      photo: null, // isi URL/path foto resmi, mis. './assets/brand/speakers/sem-01.jpg'
       slotLabel: { en: `Conference Speaker ${num}`, id: `Pembicara Konferensi ${num}` },
       fullName: { en: 'To Be Announced', id: 'Akan Diumumkan' },
       titles: { en: 'Academic & Professional Titles — TBA', id: 'Gelar Akademik & Profesi — TBA' },
@@ -711,9 +739,6 @@
     activeDayId: 'day-1',
     activeProgramFilter: 'All',
     speakerSearch: '',
-    speakerTrackFilter: 'all',
-    showAllSpeakers: false,
-    showAllConfSpeakers: false,
     expandedSessionId: 'day1-tba-1',
     selectedItem: null,
     mobileMenuOpen: false,
@@ -1707,128 +1732,614 @@
     });
   }
 
-  function renderSpeakersLists() {
-    const q = state.speakerSearch.trim().toLowerCase();
-    const track = state.speakerTrackFilter || 'all';
+  // ===================================================================
+  // SCENE 05 — SPEAKER ARC CAROUSEL
+  // Two full-bleed concave curved strips (15 workshop + 42 seminar speakers).
+  // Cards are positioned on the inside of a cylinder (edges come closer and
+  // tilt toward the centre). One rAF loop drives both rows: drag with momentum,
+  // trackpad swipe, arrow buttons/keys, slow auto-drift that pauses on hover,
+  // focus, search, an open profile drawer, or prefers-reduced-motion.
+  // ===================================================================
+  const ARC_ROWS = ['ws', 'sem'];
+  const ARC_GEO = {
+    ws: { W: 200, gap: 28 },
+    sem: { W: 168, gap: 22 },
+  };
+  const ARC_HIDE_RAD = 1.22; // cards beyond ~70° are hidden (off-screen anyway)
+  const ARC_FADE_RAD = 1.04; // start fading at ~60°
+  const ARC_SEC_PER_CARD = 4; // auto-drift speed
+  const ARC_ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" style="width:16px;height:16px"><rect x="7" y="5.5" width="3.5" height="13" rx="1"></rect><rect x="13.5" y="5.5" width="3.5" height="13" rx="1"></rect></svg>';
+  const ARC_ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" style="width:16px;height:16px"><path d="M8 5.5v13l10-6.5z"></path></svg>';
+  const ARC_ICON_PREV = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>';
+  const ARC_ICON_NEXT = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>';
+  const ARC_ICON_DRAG = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C69C54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-4 4 4 4"></path><path d="m16 8 4 4-4 4"></path><path d="M4 12h16"></path></svg>';
+  const ARC_ICON_SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C69C54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>';
+  const ARC_SILHOUETTE = '<svg viewBox="0 0 120 160" aria-hidden="true"><circle cx="60" cy="52" r="27" fill="#DDBE82" fill-opacity="0.28"></circle><path d="M8 160 C8 116 32 92 60 92 C88 92 112 116 112 160 Z" fill="#DDBE82" fill-opacity="0.22"></path></svg>';
 
-    let allList = [];
-    if (track === 'all' || track === 'workshop') {
-      allList = allList.concat(EVENT_DATA.workshopSpeakers);
-    }
-    if (track === 'all' || track === 'conference') {
-      allList = allList.concat(EVENT_DATA.conferenceSpeakers);
-    }
+  const ARC_CSS = `
+.iomu-sp{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:48px;color:#F4E9D7;font-family:Inter,sans-serif}
+.iomu-sp::before{content:"";position:absolute;left:0;right:0;top:-96px;bottom:-96px;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(12,31,27,0) 0%,rgba(12,31,27,.82) 14%,rgba(12,31,27,.82) 86%,rgba(12,31,27,0) 100%)}
+.iomu-sp-head{width:100%;max-width:860px;margin:0 auto;box-sizing:border-box;padding:0 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.iomu-sp-pill{display:inline-flex;align-items:center;min-height:30px;padding:0 14px;border:1px solid rgba(198,156,84,.5);border-radius:999px;background:rgba(198,156,84,.14);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#DDBE82}
+.iomu-sp-script{font-family:'Great Vibes',cursive;font-size:36px;line-height:1.1;color:#DDBE82}
+.iomu-sp-title{margin:0;font-family:Montserrat,sans-serif;font-size:clamp(32px,5vw,56px);font-weight:800;line-height:1.1;color:#F4E9D7}
+.iomu-sp-desc{margin:4px 0 0;max-width:620px;font-size:15px;line-height:1.6;color:rgba(244,233,215,.86)}
+.iomu-sp-desc strong{color:#F4E9D7}
+.iomu-sp-search{position:relative;width:100%;max-width:360px;margin-top:8px}
+.iomu-sp-search svg{position:absolute;left:15px;top:50%;width:16px;height:16px;transform:translateY(-50%);pointer-events:none}
+.iomu-sp-search input{width:100%;height:44px;box-sizing:border-box;padding:0 16px 0 40px;border:1px solid rgba(198,156,84,.6);border-radius:999px;background:rgba(31,74,66,.6);color:#F4E9D7;font-family:Inter,sans-serif;font-size:13px}
+.iomu-sp-search input::placeholder{color:rgba(244,233,215,.62)}
+.iomu-sp-search input:focus{border-color:#DDBE82;outline:none}
+.iomu-sp-search input:focus-visible{outline:2px solid #DDBE82;outline-offset:2px}
+.iomu-sp-row{display:flex;flex-direction:column;gap:8px}
+.iomu-sp-rowhead,.iomu-sp-progress{width:100%;max-width:1280px;margin:0 auto;box-sizing:border-box;padding:0 20px}
+.iomu-sp-rowhead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.iomu-sp-eyebrow{display:block;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#C69C54}
+.iomu-sp-titleline{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:6px}
+.iomu-sp-rowtitle{margin:0;font-family:Montserrat,sans-serif;font-size:22px;font-weight:800;color:#F4E9D7}
+.iomu-sp-count{display:inline-flex;align-items:center;height:24px;padding:0 12px;border:1px solid rgba(198,156,84,.5);border-radius:999px;background:rgba(31,74,66,.6);font-size:11px;font-weight:700;color:#DDBE82}
+.iomu-sp-controls{display:flex;align-items:center;gap:10px}
+.iomu-sp-range{min-width:72px;text-align:right;font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:#DDBE82}
+.iomu-sp-nav{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid #C69C54;border-radius:999px;background:transparent;color:#F4E9D7;cursor:pointer;transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+.iomu-sp-nav--soft{border-color:rgba(198,156,84,.45);color:#DDBE82}
+.iomu-sp-nav:hover{background:#C69C54;border-color:#C69C54;color:#14302B}
+.iomu-sp-nav:focus-visible{outline:2px solid #DDBE82;outline-offset:2px}
+.iomu-sp-nav[hidden]{display:none}
+.iomu-sp-nav svg{width:18px;height:18px}
+.iomu-arc-stage{position:relative;width:100%;overflow:hidden;overflow:clip;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+.iomu-arc-stage[hidden]{display:none}
+.iomu-arc-stage--ws{height:480px}
+.iomu-arc-stage--sem{height:420px}
+.iomu-arc-stage.is-dragging{cursor:grabbing}
+.iomu-arc-stage.is-dragging .iomu-arc-card{pointer-events:none}
+.iomu-arc-ring{position:absolute;left:50%;top:50%;width:0;height:0;perspective:1400px}
+.iomu-arc-card{position:absolute;display:flex;flex-direction:column;padding:0;border:0;background:transparent;color:#F4E9D7;font:inherit;text-align:left;cursor:pointer;-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform,opacity;transform-origin:50% 50%}
+.iomu-arc-card--ws{left:-100px;top:-176px;width:200px;gap:12px}
+.iomu-arc-card--sem{left:-84px;top:-152px;width:168px;gap:10px}
+.iomu-arc-card:focus-visible{outline:none}
+.iomu-arc-photo{position:relative;display:block;overflow:hidden;background:#14302B;box-shadow:0 22px 40px -22px rgba(0,0,0,.85);transition:box-shadow .3s ease}
+.iomu-arc-card--ws .iomu-arc-photo{width:200px;height:267px;border-radius:16px}
+.iomu-arc-card--sem .iomu-arc-photo{width:168px;height:224px;border-radius:14px}
+.iomu-arc-photo::after{content:"";position:absolute;inset:0;background-image:var(--iomu-kawung-accent-url);background-size:180px auto;opacity:.07;pointer-events:none}
+.iomu-arc-card:hover .iomu-arc-photo,.iomu-arc-card:focus-visible .iomu-arc-photo{box-shadow:0 0 0 2px #DDBE82,0 26px 44px -22px rgba(0,0,0,.9)}
+.iomu-arc-photo img,.iomu-arc-photo svg{transition:transform .7s cubic-bezier(.16,1,.3,1)}
+.iomu-arc-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.iomu-arc-photo svg{position:absolute;left:11%;top:16%;width:78%;height:auto}
+.iomu-arc-card:hover .iomu-arc-photo img,.iomu-arc-card:hover .iomu-arc-photo svg{transform:scale(1.05)}
+.iomu-arc-tone-a{background:linear-gradient(180deg,#2A5C52 0%,#1F4A42 48%,#14302B 100%)}
+.iomu-arc-tone-b{background:linear-gradient(180deg,#3A5E48 0%,#22463B 50%,#132B26 100%)}
+.iomu-arc-tone-c{background:linear-gradient(180deg,#2E5560 0%,#1D3F45 50%,#122B2A 100%)}
+.iomu-arc-caption{display:flex;flex-direction:column;gap:4px;padding:0 2px}
+.iomu-arc-label{font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#C69C54}
+.iomu-arc-name{font-family:Montserrat,sans-serif;font-size:15px;font-weight:800;line-height:1.25;color:#F4E9D7;transition:color .2s ease}
+.iomu-arc-card--sem .iomu-arc-name{font-size:14px}
+.iomu-arc-card:hover .iomu-arc-name,.iomu-arc-card:focus-visible .iomu-arc-name{color:#DDBE82}
+.iomu-arc-role{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.45;color:rgba(244,233,215,.8)}
+.iomu-arc-card--sem .iomu-arc-role{font-size:11px}
+.iomu-sp-empty{width:calc(100% - 40px);max-width:1240px;margin:0 auto;box-sizing:border-box;padding:32px 16px;border:1px dashed rgba(198,156,84,.4);border-radius:18px;text-align:center;font-size:13px;color:rgba(244,233,215,.75)}
+.iomu-sp-empty[hidden]{display:none}
+.iomu-sp-progress{display:flex;align-items:center;gap:16px}
+.iomu-sp-track{position:relative;flex:1 1 auto;height:2px;overflow:hidden;border-radius:2px;background:rgba(198,156,84,.22)}
+.iomu-sp-bar{position:absolute;inset:0;display:block;background:#C69C54;transform-origin:left center;transform:scaleX(0);transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.iomu-sp-hint{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:11px;color:rgba(244,233,215,.72)}
+.iomu-sp-hint svg{width:14px;height:14px}
+.iomu-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){.iomu-arc-photo,.iomu-arc-photo img,.iomu-arc-photo svg,.iomu-sp-bar,.iomu-sp-nav,.iomu-arc-name{transition:none}}
+`;
 
-    const filtered = allList.filter((s) => {
-      if (!q) return true;
-      return (
-        L(s.positionTitle).toLowerCase().includes(q) ||
-        L(s.slotLabel).toLowerCase().includes(q) ||
-        L(s.fullName).toLowerCase().includes(q) ||
-        L(s.presentationTitle).toLowerCase().includes(q) ||
-        L(s.institution).toLowerCase().includes(q)
-      );
-    });
+  function createArcRowState() {
+    return {
+      pos: null,
+      vel: 0,
+      target: null,
+      drag: null,
+      center: -1,
+      loop: true,
+      force: true,
+      lastN: -1,
+      R: 800,
+      stage: null,
+      hover: false,
+      focusIn: false,
+      lastTouch: 0,
+      paused: false,
+      visible: true,
+      observer: null,
+    };
+  }
 
-    const isLimited = !q && !state.showAllSpeakers && filtered.length > 16;
-    const visible = isLimited ? filtered.slice(0, 16) : filtered;
+  const arcState = { ws: createArcRowState(), sem: createArcRowState() };
+  let arcLoopStarted = false;
+  let arcLastFrame = 0;
+  let arcLastPointer = 0;
+  let arcDragEndAt = 0;
+  let arcLastQuery = null;
 
-    const countEl = document.getElementById('iomu-speaker-total-count');
-    const gridEl = document.getElementById('iomu-speakers-card-grid');
-    const toggleBtn = document.getElementById('iomu-toggle-all-speakers');
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
 
-    if (countEl) {
-      countEl.textContent = `${filtered.length} ${t('spHeading')}`;
-    }
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
 
-    if (toggleBtn) {
-      toggleBtn.classList.toggle('hidden', Boolean(q) || filtered.length <= 16);
-      toggleBtn.textContent = state.showAllSpeakers
-        ? t('showCompact')
-        : `${t('showAllPrefix')} (${filtered.length})`;
-    }
+  function ensureArcStyles() {
+    if (document.getElementById('iomu-arc-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'iomu-arc-styles';
+    style.textContent = ARC_CSS;
+    document.head.appendChild(style);
+  }
 
-    // Update active tab buttons styling
-    document.querySelectorAll('[data-speaker-track]').forEach((btn) => {
-      const active = btn.getAttribute('data-speaker-track') === track;
-      btn.className = `rounded-full px-3.5 py-1.5 transition ${
-        active ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'
-      }`;
-    });
+  function arcIsLoop(rowKey, n, R) {
+    const g = ARC_GEO[rowKey];
+    const stepRad = (g.W + g.gap) / R;
+    // Only wrap around when the strip is long enough that the seam stays off-screen.
+    return n * stepRad > 2 * ARC_HIDE_RAD + stepRad;
+  }
 
-    if (gridEl) {
-      if (visible.length === 0) {
-        gridEl.innerHTML = `<div class="col-span-full py-12 text-center text-ivory/60"><p class="text-sm">Tidak ada pembicara yang cocok dengan pencarian "${q}".</p></div>`;
-        return;
+  function arcInitialPos(loop, n) {
+    return loop ? 0 : (n - 1) / 2;
+  }
+
+  function arcPlace(rowKey, n, pos, R) {
+    const g = ARC_GEO[rowKey];
+    const stepRad = (g.W + g.gap) / R;
+    const loop = arcIsLoop(rowKey, n, R);
+    const list = [];
+    for (let i = 0; i < n; i++) {
+      let d = i - pos;
+      if (loop) {
+        d = ((d % n) + n) % n;
+        if (d >= n / 2) d -= n;
       }
-
-      gridEl.innerHTML = visible
-        .map((sp) => {
-          const isWs = sp.track === 'workshop';
-          return `
-        <button type="button" data-select-speaker="${sp.id}" class="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-kawung-gold/45 bg-gradient-to-b from-keraton/95 via-keraton/90 to-emerald/85 p-5 text-left text-ivory shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-kawung-gold hover:shadow-[0_20px_45px_rgba(198,156,84,0.25)] iomu-kawung-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kawung-gold">
-          <!-- Top Bar: Track Badge + Slot Number -->
-          <div class="flex items-center justify-between gap-2 border-b border-kawung-gold/25 pb-3 w-full">
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-kawung-gold/60 ${isWs ? 'bg-emerald/75 text-light-gold' : 'bg-keraton/80 text-light-gold'} px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-              <span class="h-1.5 w-1.5 rounded-full ${isWs ? 'bg-kawung-gold' : 'bg-light-gold'}"></span>
-              ${isWs ? t('spFilterWs') : t('spFilterConf')}
-            </span>
-            <span class="font-display text-[11px] font-extrabold tracking-wider text-light-gold/90">${L(sp.slotLabel)}</span>
-          </div>
-
-          <!-- Middle: Avatar & Identification -->
-          <div class="my-4 flex items-center gap-3.5 w-full">
-            <div class="relative shrink-0">
-              <div class="iomu-arch-frame flex h-20 w-16 flex-col items-center justify-center bg-gradient-to-b from-emerald/80 to-keraton p-1.5 shadow-md ring-2 ring-kawung-gold/60 transition-transform duration-300 group-hover:scale-105 group-hover:ring-light-gold">
-                <span class="text-xl">🩺</span>
-                <span class="mt-1 font-display text-[8px] font-extrabold uppercase tracking-wider text-kawung-gold">${t('photoTba')}</span>
-              </div>
-            </div>
-            <div class="min-w-0 flex-1">
-              <h4 class="font-display text-sm sm:text-base font-extrabold leading-snug text-ivory transition-colors group-hover:text-light-gold truncate">
-                ${L(sp.fullName)}
-              </h4>
-              <p class="mt-0.5 text-[11px] font-semibold text-kawung-gold truncate">
-                ${L(sp.titles)}
-              </p>
-              <p class="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-ivory/80">
-                ${L(sp.positionTitle)}
-              </p>
-            </div>
-          </div>
-
-          <!-- Topic Spotlight Callout -->
-          <div class="w-full rounded-2xl border border-kawung-gold/30 bg-emerald/35 p-3 backdrop-blur-sm">
-            <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-light-gold">
-              <span>🎙️</span> <span>${t('spTopicLabel')}</span>
-            </div>
-            <p class="mt-1 line-clamp-2 text-xs font-semibold text-ivory/95 leading-snug">
-              ${L(sp.presentationTitle)}
-            </p>
-          </div>
-
-          <!-- Card Footer: Institution & View Profile Action -->
-          <div class="mt-4 flex items-center justify-between border-t border-kawung-gold/20 pt-3 text-[11px] w-full">
-            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-ivory/70 truncate max-w-[65%]">
-              <span>🏛️</span> <span class="truncate">${L(sp.institution)}</span>
-            </span>
-            <span class="inline-flex items-center gap-1 font-display text-xs font-bold text-light-gold transition group-hover:text-ivory group-hover:translate-x-1 duration-200">
-              <span>${t('spViewProfile')}</span>
-              <span>&rarr;</span>
-            </span>
-          </div>
-        </button>`;
-        })
-        .join('');
-
-      gridEl.querySelectorAll('[data-select-speaker]').forEach((el) => {
-        el.addEventListener('click', () => {
-          const id = el.getAttribute('data-select-speaker');
-          const sp = EVENT_DATA.workshopSpeakers.find((s) => s.id === id) || EVENT_DATA.conferenceSpeakers.find((s) => s.id === id);
-          if (sp) selectItem({ kind: 'speaker', data: sp });
-        });
+      const th = d * stepRad;
+      const a = Math.abs(th);
+      if (a > ARC_HIDE_RAD) {
+        list.push(null);
+        continue;
+      }
+      const x = R * Math.sin(th);
+      const z = R * (1 - Math.cos(th));
+      list.push({
+        transform: `translate3d(${x.toFixed(2)}px, 0px, ${z.toFixed(2)}px) rotateY(${(-th * 57.29578).toFixed(3)}deg)`,
+        opacity: a > ARC_FADE_RAD ? ((ARC_HIDE_RAD - a) / (ARC_HIDE_RAD - ARC_FADE_RAD)).toFixed(3) : '1',
+        zIndex: String(500 + Math.round(z)),
       });
     }
+    return { list, loop };
+  }
+
+  function arcMeasure(rowKey) {
+    const r = arcState[rowKey];
+    if (!r.stage) return;
+    const w = r.stage.clientWidth;
+    if (!w) return;
+    const R = Math.round(Math.max(420, Math.min(800, w * 0.58)));
+    if (R !== r.R) {
+      r.R = R;
+      r.force = true;
+    }
+  }
+
+  function arcAutoRunning(rowKey) {
+    const r = arcState[rowKey];
+    if (state.prefersReducedMotion || r.paused || r.hover || r.focusIn || !r.visible) return false;
+    if (state.selectedItem || state.speakerSearch.trim()) return false;
+    if (Date.now() - r.lastTouch < 2500) return false;
+    return !document.hidden;
+  }
+
+  function arcSyncToggle(rowKey) {
+    const r = arcState[rowKey];
+    const btn = document.getElementById(`iomu-arc-toggle-${rowKey}`);
+    if (!btn) return;
+    btn.hidden = !r.loop || state.prefersReducedMotion;
+    const label = r.paused ? t('spAutoPlay') : t('spAutoPause');
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    btn.innerHTML = r.paused ? ARC_ICON_PLAY : ARC_ICON_PAUSE;
+  }
+
+  function arcApply(rowKey, cards, n) {
+    const r = arcState[rowKey];
+    const placed = arcPlace(rowKey, n, r.pos, r.R);
+    for (let i = 0; i < n; i++) {
+      const el = cards[i];
+      const p = placed.list[i];
+      if (!p) {
+        el.style.visibility = 'hidden';
+        el.style.opacity = '0';
+        continue;
+      }
+      el.style.transform = p.transform;
+      el.style.opacity = p.opacity;
+      el.style.zIndex = p.zIndex;
+      el.style.visibility = 'visible';
+    }
+    let center = Math.round(r.pos);
+    center = placed.loop ? ((center % n) + n) % n : Math.max(0, Math.min(n - 1, center));
+    if (center !== r.center) {
+      r.center = center;
+      const rangeEl = document.getElementById(`iomu-arc-range-${rowKey}`);
+      const barEl = document.getElementById(`iomu-arc-bar-${rowKey}`);
+      if (rangeEl) rangeEl.textContent = `${pad2(center + 1)} / ${pad2(n)}`;
+      if (barEl) barEl.style.transform = `scaleX(${((center + 1) / n).toFixed(4)})`;
+    }
+  }
+
+  function arcStep(rowKey, dt) {
+    const r = arcState[rowKey];
+    const stage = r.stage;
+    if (!stage || !stage.isConnected) return;
+    const cards = stage.querySelectorAll('.iomu-arc-card');
+    const n = cards.length;
+    if (!n) return;
+    const loop = arcIsLoop(rowKey, n, r.R);
+    if (loop !== r.loop) {
+      r.loop = loop;
+      arcSyncToggle(rowKey);
+    }
+    if (r.pos === null) {
+      r.pos = arcInitialPos(loop, n);
+      r.force = true;
+    }
+    const before = r.pos;
+    if (r.drag && r.drag.moved) {
+      // position follows the pointer (set in pointermove)
+    } else if (r.target !== null) {
+      const diff = r.target - r.pos;
+      if (state.prefersReducedMotion || Math.abs(diff) < 0.001) {
+        r.pos = r.target;
+        r.target = null;
+      } else {
+        r.pos += diff * (1 - Math.exp(-dt * 7));
+      }
+    } else if (Math.abs(r.vel) > 0.01) {
+      r.pos += r.vel * dt;
+      r.vel *= Math.exp(-dt * 2.8);
+      if (Math.abs(r.vel) < 0.05) r.vel = 0;
+    } else if (loop && arcAutoRunning(rowKey)) {
+      r.pos += dt / ARC_SEC_PER_CARD;
+    }
+    if (!loop) {
+      const clamped = Math.max(0, Math.min(n - 1, r.pos));
+      if (clamped !== r.pos) {
+        r.pos = clamped;
+        r.vel = 0;
+      }
+      if (r.target !== null) r.target = Math.max(0, Math.min(n - 1, r.target));
+    } else if (!r.drag && r.target === null) {
+      r.pos = ((r.pos % n) + n) % n;
+    }
+    if (r.force || r.pos !== before || r.lastN !== n) {
+      if (!r.visible) {
+        r.force = true; // repaint once the strip scrolls back into view
+        return;
+      }
+      r.force = false;
+      r.lastN = n;
+      arcApply(rowKey, cards, n);
+    }
+  }
+
+  function arcFrame(time) {
+    requestAnimationFrame(arcFrame);
+    const dt = arcLastFrame ? Math.min(0.05, Math.max(0, (time - arcLastFrame) / 1000)) : 0;
+    arcLastFrame = time;
+    ARC_ROWS.forEach((rowKey) => arcStep(rowKey, dt));
+  }
+
+  function ensureArcLoop() {
+    if (arcLoopStarted) return;
+    arcLoopStarted = true;
+    requestAnimationFrame(arcFrame);
+    window.addEventListener('resize', () => ARC_ROWS.forEach(arcMeasure), { passive: true });
+  }
+
+  function arcNudge(rowKey, dir) {
+    const r = arcState[rowKey];
+    if (r.pos === null) return;
+    r.lastTouch = Date.now();
+    r.vel = 0;
+    const base = r.target !== null ? r.target : Math.round(r.pos);
+    r.target = base + dir;
+  }
+
+  function arcToggle(rowKey) {
+    const r = arcState[rowKey];
+    r.paused = !r.paused;
+    arcSyncToggle(rowKey);
+  }
+
+  function findSpeakerById(id) {
+    return EVENT_DATA.workshopSpeakers.find((s) => s.id === id) || EVENT_DATA.conferenceSpeakers.find((s) => s.id === id);
+  }
+
+  function bindArcRow(rowKey) {
+    const r = arcState[rowKey];
+    const stage = document.getElementById(`iomu-arc-stage-${rowKey}`);
+    const rowEl = document.getElementById(`iomu-arc-row-${rowKey}`);
+    if (!stage) {
+      r.stage = null;
+      return;
+    }
+    if (stage.dataset.arcBound === '1') return;
+    stage.dataset.arcBound = '1';
+    r.stage = stage;
+    r.force = true;
+    r.center = -1;
+    r.hover = false;
+    r.focusIn = false;
+    r.drag = null;
+    arcMeasure(rowKey);
+
+    if (r.observer) r.observer.disconnect();
+    r.observer = null;
+    r.visible = true;
+    if ('IntersectionObserver' in window) {
+      r.observer = new IntersectionObserver(
+        (entries) => {
+          r.visible = entries.some((entry) => entry.isIntersecting);
+          if (r.visible) r.force = true;
+        },
+        { rootMargin: '200px 0px' }
+      );
+      r.observer.observe(stage);
+    }
+
+    const px = ARC_GEO[rowKey].W + ARC_GEO[rowKey].gap;
+
+    stage.addEventListener('pointerdown', (e) => {
+      arcLastPointer = Date.now();
+      r.lastTouch = Date.now();
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (r.pos === null) return;
+      r.vel = 0;
+      r.target = null;
+      r.drag = { x: e.clientX, y: e.clientY, id: e.pointerId, startPos: r.pos, moved: false, lastX: e.clientX, lastT: performance.now(), v: 0 };
+    });
+
+    stage.addEventListener('pointermove', (e) => {
+      const d = r.drag;
+      if (!d) return;
+      const dx = e.clientX - d.x;
+      const dy = e.clientY - d.y;
+      if (!d.moved) {
+        if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy)) return;
+        d.moved = true;
+        stage.classList.add('is-dragging');
+        try {
+          stage.setPointerCapture(d.id);
+        } catch (err) {
+          /* pointer already released */
+        }
+      }
+      r.pos = d.startPos - dx / px;
+      const now = performance.now();
+      const ddt = (now - d.lastT) / 1000;
+      if (ddt > 0) {
+        const inst = -(e.clientX - d.lastX) / px / ddt;
+        d.v = d.v * 0.6 + inst * 0.4;
+      }
+      d.lastX = e.clientX;
+      d.lastT = now;
+      r.lastTouch = Date.now();
+    });
+
+    const endDrag = () => {
+      const d = r.drag;
+      if (!d) return;
+      r.drag = null;
+      if (!d.moved) return;
+      stage.classList.remove('is-dragging');
+      try {
+        stage.releasePointerCapture(d.id);
+      } catch (err) {
+        /* pointer already released */
+      }
+      arcDragEndAt = Date.now();
+      r.lastTouch = Date.now();
+      if (performance.now() - d.lastT > 120) d.v = 0;
+      r.vel = Math.max(-14, Math.min(14, d.v));
+    };
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('pointerleave', endDrag);
+
+    stage.addEventListener(
+      'wheel',
+      (e) => {
+        if (r.pos === null || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+        r.target = null;
+        r.vel = 0;
+        r.pos += e.deltaX / px;
+        r.lastTouch = Date.now();
+      },
+      { passive: true }
+    );
+
+    stage.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      arcNudge(rowKey, e.key === 'ArrowRight' ? 1 : -1);
+      const cards = stage.querySelectorAll('.iomu-arc-card');
+      const n = cards.length;
+      if (!n || r.target === null) return;
+      let idx = Math.round(r.target);
+      idx = r.loop ? ((idx % n) + n) % n : Math.max(0, Math.min(n - 1, idx));
+      const card = cards[idx];
+      setTimeout(() => {
+        try {
+          card.focus({ preventScroll: true });
+        } catch (err) {
+          /* card removed */
+        }
+      }, 60);
+    });
+
+    // Keep the clipped stage from being scrolled by focus() on an edge card.
+    stage.addEventListener('scroll', () => {
+      if (stage.scrollLeft || stage.scrollTop) {
+        stage.scrollLeft = 0;
+        stage.scrollTop = 0;
+      }
+    });
+
+    // Tabbing onto a card glides it to the centre.
+    stage.addEventListener('focusin', (e) => {
+      if (Date.now() - arcLastPointer < 600 || r.pos === null) return;
+      const card = e.target.closest('.iomu-arc-card');
+      if (!card) return;
+      const i = Number(card.getAttribute('data-arc-index'));
+      const n = stage.querySelectorAll('.iomu-arc-card').length;
+      let diff = i - r.pos;
+      if (r.loop) {
+        diff = ((diff % n) + n) % n;
+        if (diff >= n / 2) diff -= n;
+      }
+      r.vel = 0;
+      r.target = r.pos + diff;
+      r.lastTouch = Date.now();
+    });
+
+    stage.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-select-speaker]');
+      if (!card || Date.now() - arcDragEndAt < 300) return;
+      const sp = findSpeakerById(card.getAttribute('data-select-speaker'));
+      if (sp) selectItem({ kind: 'speaker', data: sp });
+    });
+
+    if (rowEl) {
+      rowEl.addEventListener('mouseenter', () => {
+        r.hover = true;
+      });
+      rowEl.addEventListener('mouseleave', () => {
+        r.hover = false;
+      });
+      rowEl.addEventListener('focusin', () => {
+        r.focusIn = true;
+      });
+      rowEl.addEventListener('focusout', (e) => {
+        if (!rowEl.contains(e.relatedTarget)) r.focusIn = false;
+      });
+    }
+  }
+
+  function arcCardHtml(rowKey, sp, i, placement) {
+    const tone = ['a', 'b', 'c'][(i + (rowKey === 'sem' ? 1 : 0)) % 3];
+    const name = L(sp.fullName);
+    const role = L(sp.positionTitle);
+    const num = (String(sp.id).match(/(\d+)$/) || [, pad2(i + 1)])[1];
+    const photo = sp.photo ? `<img src="${escapeHtml(sp.photo)}" alt="" loading="lazy" draggable="false" />` : ARC_SILHOUETTE;
+    const style = placement
+      ? `transform:${placement.transform};opacity:${placement.opacity};z-index:${placement.zIndex};visibility:visible`
+      : 'opacity:0;visibility:hidden';
+    return `<button type="button" class="iomu-arc-card iomu-arc-card--${rowKey}" data-select-speaker="${sp.id}" data-arc-index="${i}" aria-label="${escapeHtml(`${t('spViewProfile')}: ${name}, ${role}`)}" style="${style}">
+        <span class="iomu-arc-photo iomu-arc-tone-${tone}">${photo}</span>
+        <span class="iomu-arc-caption">
+          <span class="iomu-arc-label">${rowKey === 'ws' ? 'Workshop' : 'Seminar'} · ${escapeHtml(num)}</span>
+          <span class="iomu-arc-name">${escapeHtml(name)}</span>
+          <span class="iomu-arc-role">${escapeHtml(role)}</span>
+        </span>
+      </button>`;
+  }
+
+  function arcRowHtml(rowKey) {
+    const isWs = rowKey === 'ws';
+    const title = isWs ? t('spWsTitle') : t('spSemTitle');
+    return `
+              <div id="iomu-arc-row-${rowKey}" class="iomu-sp-row">
+                <div class="iomu-sp-rowhead">
+                  <div>
+                    <span class="iomu-sp-eyebrow">${isWs ? t('spWsEyebrow') : t('spSemEyebrow')}</span>
+                    <div class="iomu-sp-titleline">
+                      <h3 class="iomu-sp-rowtitle">${title}</h3>
+                      <span id="iomu-arc-count-${rowKey}" class="iomu-sp-count"></span>
+                    </div>
+                  </div>
+                  <div class="iomu-sp-controls">
+                    <span id="iomu-arc-range-${rowKey}" class="iomu-sp-range"></span>
+                    <button id="iomu-arc-toggle-${rowKey}" type="button" data-arc-toggle="${rowKey}" class="iomu-sp-nav iomu-sp-nav--soft"></button>
+                    <button type="button" data-arc-nav="${rowKey}" data-arc-dir="-1" class="iomu-sp-nav" aria-label="${escapeHtml(`${t('spPrev')} — ${title}`)}">${ARC_ICON_PREV}</button>
+                    <button type="button" data-arc-nav="${rowKey}" data-arc-dir="1" class="iomu-sp-nav" aria-label="${escapeHtml(`${t('spNext')} — ${title}`)}">${ARC_ICON_NEXT}</button>
+                  </div>
+                </div>
+                <div id="iomu-arc-stage-${rowKey}" class="iomu-arc-stage iomu-arc-stage--${rowKey}" role="group" aria-roledescription="carousel" aria-label="${escapeHtml(title)}">
+                  <div id="iomu-arc-ring-${rowKey}" class="iomu-arc-ring"></div>
+                </div>
+                <p id="iomu-arc-empty-${rowKey}" class="iomu-sp-empty" hidden></p>
+                <div class="iomu-sp-progress">
+                  <div class="iomu-sp-track"><span id="iomu-arc-bar-${rowKey}" class="iomu-sp-bar"></span></div>
+                  <span class="iomu-sp-hint">${ARC_ICON_DRAG}${t('spDragHint')}</span>
+                </div>
+              </div>`;
+  }
+
+  function renderSpeakersLists() {
+    ensureArcStyles();
+    const rawQuery = state.speakerSearch.trim();
+    const q = rawQuery.toLowerCase();
+    const matches = (s) =>
+      !q ||
+      [L(s.positionTitle), L(s.slotLabel), L(s.fullName), L(s.presentationTitle), L(s.institution)].some((v) =>
+        String(v).toLowerCase().includes(q)
+      );
+    const lists = {
+      ws: EVENT_DATA.workshopSpeakers.filter(matches),
+      sem: EVENT_DATA.conferenceSpeakers.filter(matches),
+    };
+    const totals = { ws: EVENT_DATA.workshopSpeakers.length, sem: EVENT_DATA.conferenceSpeakers.length };
+    const queryChanged = arcLastQuery !== null && q !== arcLastQuery;
+    arcLastQuery = q;
+
+    ARC_ROWS.forEach((rowKey) => {
+      const list = lists[rowKey];
+      const r = arcState[rowKey];
+      const stage = document.getElementById(`iomu-arc-stage-${rowKey}`);
+      const ringEl = document.getElementById(`iomu-arc-ring-${rowKey}`);
+      const emptyEl = document.getElementById(`iomu-arc-empty-${rowKey}`);
+      const countEl = document.getElementById(`iomu-arc-count-${rowKey}`);
+
+      if (queryChanged) {
+        r.pos = null;
+        r.target = null;
+        r.vel = 0;
+        r.drag = null;
+      }
+      r.center = -1;
+      r.force = true;
+
+      if (countEl) {
+        countEl.textContent = q ? `${list.length} ${t('spOf')} ${totals[rowKey]}` : `${totals[rowKey]} ${t('spPeople')}`;
+      }
+      if (emptyEl) {
+        emptyEl.hidden = list.length > 0;
+        emptyEl.textContent = list.length ? '' : `${t('spEmpty')} “${rawQuery}”.`;
+      }
+      if (stage) stage.hidden = list.length === 0;
+
+      bindArcRow(rowKey);
+      arcMeasure(rowKey);
+
+      if (ringEl) {
+        const loop = arcIsLoop(rowKey, list.length, r.R);
+        const pos = r.pos === null ? arcInitialPos(loop, list.length) : r.pos;
+        const placed = arcPlace(rowKey, list.length, pos, r.R);
+        ringEl.innerHTML = list.map((sp, i) => arcCardHtml(rowKey, sp, i, placed.list[i])).join('');
+        r.loop = loop;
+      }
+
+      const rangeEl = document.getElementById(`iomu-arc-range-${rowKey}`);
+      const barEl = document.getElementById(`iomu-arc-bar-${rowKey}`);
+      if (!list.length) {
+        if (rangeEl) rangeEl.textContent = '00 / 00';
+        if (barEl) barEl.style.transform = 'scaleX(0)';
+      }
+      arcSyncToggle(rowKey);
+    });
+
+    ensureArcLoop();
   }
 
   function renderProgramGrid() {
@@ -2089,44 +2600,22 @@
             </div>
           </section>
 
-          <!-- SCENE 05 — SPEAKERS & EXPERTS -->
-          <section id="speakers" class="flex min-h-[140vh] items-center px-4 py-24 sm:px-8">
-            <div class="pointer-events-auto mx-auto w-full max-w-7xl space-y-8 rounded-3xl border border-kawung-gold/70 bg-keraton/94 p-6 text-ivory shadow-keraton backdrop-blur-md iomu-kawung-accent sm:p-10">
-              <div class="flex flex-col gap-4 border-b border-kawung-gold/30 pb-6 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <span class="font-script text-3xl text-light-gold">${t('spScript')}</span>
-                  <p class="font-display text-xs font-bold uppercase tracking-[0.2em] text-kawung-gold">${t('spTag')}</p>
-                  <h2 class="mt-1 font-display text-2xl sm:text-3xl font-extrabold text-ivory">${t('spHeading')}</h2>
-                  <p class="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-ivory/85">${t('spDesc')}</p>
-                </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <!-- Track Filter Tabs -->
-                  <div id="iomu-speaker-track-tabs" class="inline-flex rounded-full border border-kawung-gold/50 bg-keraton/90 p-1 text-xs font-bold shadow-inner">
-                    <button type="button" data-speaker-track="all" class="rounded-full px-3.5 py-1.5 transition ${state.speakerTrackFilter === 'all' ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'}">${t('spFilterAll')} (57)</button>
-                    <button type="button" data-speaker-track="workshop" class="rounded-full px-3.5 py-1.5 transition ${state.speakerTrackFilter === 'workshop' ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'}">${t('spFilterWs')} (15)</button>
-                    <button type="button" data-speaker-track="conference" class="rounded-full px-3.5 py-1.5 transition ${state.speakerTrackFilter === 'conference' ? 'bg-kawung-gold text-keraton shadow-sm' : 'text-ivory/80 hover:text-light-gold'}">${t('spFilterConf')} (42)</button>
-                  </div>
-                  <!-- Search Box -->
-                  <div class="relative w-full sm:w-64">
-                    <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-kawung-gold">🔍</span>
-                    <input id="iomu-speaker-search" type="search" value="${state.speakerSearch}" placeholder="${t('spSearchPlaceholder')}" class="w-full rounded-full border border-kawung-gold/60 bg-emerald/60 py-2 pl-9 pr-4 text-xs text-ivory placeholder:text-ivory/60 focus:border-light-gold focus:outline-none" />
-                  </div>
+          <!-- SCENE 05 — SPEAKERS & EXPERTS (full-bleed curved carousels, no panel box) -->
+          <section id="speakers" class="flex min-h-[140vh] items-center py-24">
+            <div class="iomu-sp pointer-events-auto w-full">
+              <div class="iomu-sp-head">
+                <span class="iomu-sp-pill">${t('spTag')}</span>
+                <span class="iomu-sp-script">${t('spScript')}</span>
+                <h2 class="iomu-sp-title">${t('spHeading')}</h2>
+                <p class="iomu-sp-desc">${t('spDesc')}</p>
+                <div class="iomu-sp-search">
+                  <label for="iomu-speaker-search" class="iomu-sr-only">${t('spSearchLabel')}</label>
+                  ${ARC_ICON_SEARCH}
+                  <input id="iomu-speaker-search" type="search" autocomplete="off" value="${escapeHtml(state.speakerSearch)}" placeholder="${t('spSearchPlaceholder')}" />
                 </div>
               </div>
-
-              <!-- Speaker Cards Grid & Showcase Controls -->
-              <div class="space-y-6">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div class="flex items-center gap-2">
-                    <span id="iomu-speaker-total-count" class="font-display text-base sm:text-lg font-extrabold text-light-gold">57 ${t('spHeading')}</span>
-                    <span class="rounded-full border border-kawung-gold/50 bg-emerald/60 px-3 py-0.5 text-[10px] font-bold text-light-gold">Hotel Alila Solo</span>
-                  </div>
-                  <button id="iomu-toggle-all-speakers" type="button" class="rounded-full border border-kawung-gold bg-kawung-gold px-5 py-2 font-display text-xs font-bold text-keraton transition hover:bg-light-gold shadow-sm"></button>
-                </div>
-
-                <!-- Modern Card View Grid -->
-                <div id="iomu-speakers-card-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6"></div>
-              </div>
+${arcRowHtml('ws')}
+${arcRowHtml('sem')}
             </div>
           </section>
 
@@ -2388,20 +2877,15 @@
       });
     }
 
-    document.querySelectorAll('[data-speaker-track]').forEach((btn) => {
+    document.querySelectorAll('[data-arc-nav]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        state.speakerTrackFilter = btn.getAttribute('data-speaker-track');
-        renderSpeakersLists();
+        arcNudge(btn.getAttribute('data-arc-nav'), Number(btn.getAttribute('data-arc-dir')) * 2);
       });
     });
 
-    const toggleAllSpeakersBtn = document.getElementById('iomu-toggle-all-speakers');
-    if (toggleAllSpeakersBtn) {
-      toggleAllSpeakersBtn.addEventListener('click', () => {
-        state.showAllSpeakers = !state.showAllSpeakers;
-        renderSpeakersLists();
-      });
-    }
+    document.querySelectorAll('[data-arc-toggle]').forEach((btn) => {
+      btn.addEventListener('click', () => arcToggle(btn.getAttribute('data-arc-toggle')));
+    });
 
     document.querySelectorAll('[data-program-filter]').forEach((el) => {
       el.addEventListener('click', () => {
